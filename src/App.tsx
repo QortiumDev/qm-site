@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   formatResourceDate,
-  formatResourceSize,
   getQdnRenderUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -33,17 +32,10 @@ import {
   normalizePriorityItems,
   normalizeWorkLogEntries,
 } from './workbenchResources';
-import type { WorkbenchDataSource } from './workbenchResources';
 
 const APP_TITLE = 'Qortium Workbench';
-const SEARCH_SERVICES = ['APP', 'WEBSITE', 'JSON'] as const;
 
-type TabId = 'overview' | 'apps' | 'priorities' | 'worklog' | 'metrics' | 'support';
-type SearchService = (typeof SEARCH_SERVICES)[number];
-type ResourceSourceState = {
-  priorities: WorkbenchDataSource;
-  workLog: WorkbenchDataSource;
-};
+type TabId = 'about' | 'apps' | 'todo' | 'worklog' | 'support';
 type DonationSendState = {
   amount: string;
   balanceLabel: string;
@@ -59,11 +51,10 @@ type SendCoinResult = {
 };
 
 export const TABS: { id: TabId; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
+  { id: 'about', label: 'About' },
   { id: 'apps', label: 'Apps' },
-  { id: 'priorities', label: 'Priorities' },
+  { id: 'todo', label: 'To-Do' },
   { id: 'worklog', label: 'Work Log' },
-  { id: 'metrics', label: 'Metrics' },
   { id: 'support', label: 'Support' },
 ];
 
@@ -78,56 +69,6 @@ export function formatNodeStatus(status: NodeStatus | null) {
   if (typeof status.syncPhase === 'string' && status.syncPhase.trim()) return status.syncPhase;
 
   return 'Connected';
-}
-
-function formatCount(value: number | undefined) {
-  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : 'Unknown';
-}
-
-function getResourceKey(resource: QdnResource, index: number) {
-  return `${resource.service ?? 'APP'}:${resource.name ?? 'unknown'}:${resource.identifier ?? index}`;
-}
-
-function getResourceTitle(resource: QdnResource) {
-  return (
-    resource.title ||
-    resource.metadataTitle ||
-    resource.identifier ||
-    resource.name ||
-    'Untitled resource'
-  );
-}
-
-function resourceAddress(resource: QdnResource) {
-  const service = resource.service ?? 'APP';
-  const name = resource.name ?? 'unknown';
-  return `qdn://${service}/${name}${resource.identifier ? `/${resource.identifier}` : ''}`;
-}
-
-export function formatResourceStatus(resource: QdnResource) {
-  const status = (resource as Record<string, unknown>).status;
-
-  if (typeof status === 'string' && status.trim()) {
-    return status.trim();
-  }
-
-  if (status && typeof status === 'object' && !Array.isArray(status)) {
-    const record = status as Record<string, unknown>;
-
-    for (const key of ['status', 'description', 'title', 'id']) {
-      const value = record[key];
-
-      if (typeof value === 'string' && value.trim()) {
-        return value.trim();
-      }
-    }
-  }
-
-  return 'listed';
-}
-
-function sourceLabel(source: WorkbenchDataSource) {
-  return source === 'qdn' ? 'QDN JSON' : 'Static fallback';
 }
 
 function stateLabel(state: PriorityItem['state']) {
@@ -171,15 +112,6 @@ function formatTransactionHash(result: SendCoinResult | string | null | undefine
   if (!isRecord(result)) return '';
 
   return getResultString(result.txHash) || getResultString(result.transactionHash) || getResultString(result.signature);
-}
-
-function statusClass(status: string) {
-  const normalized = status.toLowerCase();
-
-  if (normalized === 'ready') return 'ready';
-  if (normalized === 'building') return 'building';
-  if (normalized === 'seed') return 'seed';
-  return 'neutral';
 }
 
 function AppIcon({ app }: { app: CatalogApp }) {
@@ -235,17 +167,20 @@ async function fetchWorkbenchCollection<T>(
   return items;
 }
 
-function getTabFromHash(hash: string): TabId {
+export function getTabFromHash(hash: string): TabId {
   const raw = hash.replace(/^#/, '');
 
+  if (raw === 'overview') return 'about';
+  if (raw === 'priorities') return 'todo';
+  if (raw === 'metrics') return 'apps';
   if (raw === 'donate') return 'support';
 
-  return TABS.some((item) => item.id === raw) ? (raw as TabId) : 'overview';
+  return TABS.some((item) => item.id === raw) ? (raw as TabId) : 'apps';
 }
 
 function useHashTab() {
   const [tab, setTab] = useState<TabId>(() => {
-    return typeof window === 'undefined' ? 'overview' : getTabFromHash(window.location.hash);
+    return typeof window === 'undefined' ? 'apps' : getTabFromHash(window.location.hash);
   });
 
   useEffect(() => {
@@ -270,34 +205,16 @@ export function App() {
   const [activeTab, setActiveTab] = useHashTab();
   const [displaySettings, setDisplaySettings] = useState(getInitialDisplaySettings);
   const [bridgeState, setBridgeState] = useState<BridgeState | null>(null);
-  const [nodeStatus, setNodeStatus] = useState<NodeStatus | null>(null);
-  const [resources, setResources] = useState<QdnResource[]>([]);
-  const [query, setQuery] = useState('Qortium');
-  const [searchService, setSearchService] = useState<SearchService>('APP');
+  const [, setNodeStatus] = useState<NodeStatus | null>(null);
   const [catalogApps, setCatalogApps] = useState<CatalogApp[]>(() => mergeCatalogResources([]));
   const [priorities, setPriorities] = useState<PriorityItem[]>(FALLBACK_PRIORITIES);
   const [workLog, setWorkLog] = useState<WorkLogEntry[]>(FALLBACK_WORK_LOG);
-  const [resourceSources, setResourceSources] = useState<ResourceSourceState>({
-    priorities: 'fallback',
-    workLog: 'fallback',
-  });
-  const [isRefreshing, setIsRefreshing] = useState(true);
-  const [isRefreshingResources, setIsRefreshingResources] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [donationSend, setDonationSend] = useState<DonationSendState | null>(null);
   const [notice, setNotice] = useState('');
 
   const catalogSections = useMemo(() => groupCatalogApps(catalogApps), [catalogApps]);
-  const liveCount = catalogApps.filter((app) => app.source === 'live' && app.status === 'READY').length;
-  const myAppCount = catalogApps.filter((app) => app.section === 'my').length;
-  const recommendedAppCount = catalogApps.filter((app) => app.section === 'recommended').length;
-  const extraAppCount = catalogApps.filter((app) => app.section === 'community').length;
-  const nodeLabel = useMemo(() => formatNodeStatus(nodeStatus), [nodeStatus]);
-  const canSearchQdn = hasAction(bridgeState, 'SEARCH_QDN_RESOURCES');
   const canSendCoins = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'SEND_COIN'));
   const canFetchWalletBalance = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'GET_WALLET_BALANCE'));
-  const hasQdnData =
-    resourceSources.priorities === 'qdn' || resourceSources.workLog === 'qdn';
 
   useEffect(() => {
     applyDisplaySettings(displaySettings);
@@ -338,11 +255,8 @@ export function App() {
     if (!hasAction(state, 'FETCH_QDN_RESOURCE')) {
       setPriorities(FALLBACK_PRIORITIES);
       setWorkLog(FALLBACK_WORK_LOG);
-      setResourceSources({ priorities: 'fallback', workLog: 'fallback' });
       return;
     }
-
-    setIsRefreshingResources(true);
 
     try {
       const [priorityResult, workLogResult] = await Promise.allSettled([
@@ -361,18 +275,13 @@ export function App() {
       } else {
         setWorkLog(FALLBACK_WORK_LOG);
       }
-
-      setResourceSources({
-        priorities: priorityResult.status === 'fulfilled' ? 'qdn' : 'fallback',
-        workLog: workLogResult.status === 'fulfilled' ? 'qdn' : 'fallback',
-      });
-    } finally {
-      setIsRefreshingResources(false);
+    } catch {
+      setPriorities(FALLBACK_PRIORITIES);
+      setWorkLog(FALLBACK_WORK_LOG);
     }
   }
 
   async function refreshRuntime() {
-    setIsRefreshing(true);
     setNotice('');
 
     try {
@@ -394,41 +303,8 @@ export function App() {
       setCatalogApps(mergeCatalogResources([]));
       setPriorities(FALLBACK_PRIORITIES);
       setWorkLog(FALLBACK_WORK_LOG);
-      setResourceSources({ priorities: 'fallback', workLog: 'fallback' });
       setNotice(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsRefreshing(false);
     }
-  }
-
-  async function searchResources(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    setIsSearching(true);
-    setNotice('');
-
-    try {
-      const result = await qdnRequest<unknown>({
-        action: 'SEARCH_QDN_RESOURCES',
-        includeMetadata: true,
-        includeStatus: true,
-        limit: 16,
-        mode: 'ALL',
-        query,
-        service: searchService,
-      });
-
-      setResources(Array.isArray(result) ? (result as QdnResource[]) : []);
-    } catch (error) {
-      setResources([]);
-      setNotice(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsSearching(false);
-    }
-  }
-
-  function selectSearchService(service: SearchService) {
-    setSearchService(service);
-    setResources([]);
   }
 
   async function openCatalogApp(app: CatalogApp) {
@@ -571,13 +447,6 @@ export function App() {
     refreshRuntime();
   }, []);
 
-  useEffect(() => {
-    if (bridgeState && canSearchQdn) {
-      searchResources();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bridgeState?.ui]);
-
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="Workbench sections">
@@ -605,7 +474,6 @@ export function App() {
       <section className="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Preview workspace</p>
             <h1>{TABS.find((tab) => tab.id === activeTab)?.label ?? APP_TITLE}</h1>
           </div>
           <button className="refresh-button" type="button" onClick={refreshRuntime}>
@@ -613,177 +481,102 @@ export function App() {
           </button>
         </header>
 
-        <section className="status-grid" aria-label="Runtime summary">
-          <article className="stat-card">
-            <span>Runtime</span>
-            <strong>{bridgeState?.ui ?? 'Detecting'}</strong>
-            <small>{bridgeState?.isHomeBridge ? 'Home bridge' : 'Browser fallback'}</small>
-          </article>
-          <article className="stat-card">
-            <span>Node</span>
-            <strong>{nodeLabel}</strong>
-            <small>Height {formatCount(nodeStatus?.height)}</small>
-          </article>
-          <article className="stat-card">
-            <span>Catalog</span>
-            <strong>{liveCount}/{catalogApps.length} ready</strong>
-            <small>{myAppCount} my apps, {recommendedAppCount} recommended, {extraAppCount} extra</small>
-          </article>
-          <article className="stat-card">
-            <span>Workbench data</span>
-            <strong>{hasQdnData ? 'QDN backed' : 'Seeded'}</strong>
-            <small>{isRefreshingResources ? 'Refreshing resources' : `${priorities.length} priorities, ${workLog.length} log entries`}</small>
-          </article>
-        </section>
-
         {notice ? <div className="notice">{notice}</div> : null}
-        {isRefreshing ? <div className="notice subtle">Refreshing runtime context...</div> : null}
 
-        {activeTab === 'overview' ? (
-          <section className="panel hero-panel">
-            <div>
-              <p className="eyebrow">From Qortal Workbench to Qortium Workbench</p>
-              <h2>One place to see the work, steer priorities, and open the apps.</h2>
-              <p>
-                This is the Qortium-native adaptation of the old workbench idea. It now targets
-                {` ${QDN_CONTRACTS.website.resource} `}and can read priorities and work-log entries
-                from QDN JSON resources while keeping useful local fallbacks.
-              </p>
-            </div>
-            <div className="hero-actions">
-              <button type="button" onClick={() => setActiveTab('apps')}>View apps</button>
-              <button className="secondary" type="button" onClick={() => setActiveTab('priorities')}>
-                View priorities
-              </button>
-            </div>
+        {activeTab === 'about' ? (
+          <section className="panel about-card">
+            <h2>About me</h2>
+            <p>
+              I'm QuickMythril, a builder on Qortium focused on practical, durable software for a decentralized web.
+              I care about tools that keep working, reduce dependence on gatekeepers, and give people direct control
+              over their data, identity, and distribution.
+            </p>
+            <h3>What drives my work</h3>
+            <ul>
+              <li>Sovereignty over convenience.</li>
+              <li>Reliability first.</li>
+              <li>Small, composable pieces.</li>
+              <li>Privacy by default.</li>
+            </ul>
+            <h3>Why Qortium</h3>
+            <p>
+              Qortium continues the protocol-first idea — distributed storage and publishing (QDN), community
+              consensus, identity that isn't rented — with a fresh network and app stack I'm actively building on
+              Previewnet.
+            </p>
+            <h3>Collaboration</h3>
+            <p>
+              Feedback, testing, and contributions are welcome. The Apps page lists current work, and the To-Do page
+              is where priorities get steered.
+            </p>
+            <ul className="bio">
+              <li>
+                <span className="label">Primary name</span>
+                <code>QuickMythril</code>
+              </li>
+              <li>
+                <span className="label">Primary address</span>
+                <code>QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko</code>
+              </li>
+              <li>
+                <span className="label">This site</span>
+                <code>qdn://WEBSITE/QuickMythril/qm-site</code>
+              </li>
+            </ul>
+            <p className="muted-note">This site runs inside Qortium Home; all live features use the Home bridge.</p>
           </section>
         ) : null}
 
         {activeTab === 'apps' ? (
-          <section className="stack">
-            <section className="panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Qortium app catalog</h2>
-                  <p>Current APP resources grouped by ownership and recommendation status.</p>
-                </div>
-              </div>
-              <div className="catalog-section-list">
-                {catalogSections.map((section) => {
-                  const ready = section.apps.filter((app) => app.source === 'live' && app.status === 'READY').length;
-
-                  return (
-                    <section className="catalog-section" key={section.id}>
-                      <div className="catalog-section-heading">
-                        <div>
-                          <h3>{section.title}</h3>
-                          <p>{section.description}</p>
-                        </div>
-                        <span className="section-count">{ready}/{section.apps.length} ready</span>
-                      </div>
-                      <div className="catalog-grid">
-                        {section.apps.map((app) => (
-                          <article className="catalog-card" key={`${app.name}/${app.identifier}`}>
-                            <div className="catalog-card-head">
-                              <AppIcon app={app} />
-                              <div className="catalog-card-title">
-                                <span className="chip">{app.category}</span>
-                                <h3>{app.title}</h3>
-                                <span>{app.resource}</span>
-                              </div>
-                              <span className={`status-pill ${statusClass(app.status)}`}>{app.status}</span>
+          <section className="panel">
+            <div className="section-heading">
+              <h2>Apps</h2>
+            </div>
+            <div className="catalog-section-list">
+              {catalogSections.map((section) => (
+                <details className="apps-group" key={section.id} open={section.id === 'my'}>
+                  <summary>
+                    {section.title} <span>({section.apps.length})</span>
+                  </summary>
+                  <div className="catalog-section">
+                    <div className="catalog-grid">
+                      {section.apps.map((app) => (
+                        <article className="catalog-card" key={`${app.name}/${app.identifier}`}>
+                          <div className="catalog-card-head">
+                            <AppIcon app={app} />
+                            <div className="catalog-card-title">
+                              <h3>{app.title}</h3>
+                              <small>{formatResourceDate(app.updated ?? app.created)}</small>
                             </div>
-                            <p>{app.summary}</p>
-                            <dl className="catalog-meta">
-                              <div>
-                                <dt>Updated</dt>
-                                <dd>{formatResourceDate(app.updated ?? app.created)}</dd>
-                              </div>
-                              <div>
-                                <dt>Size</dt>
-                                <dd>{formatResourceSize(app.size)}</dd>
-                              </div>
-                              <div>
-                                <dt>Source</dt>
-                                <dd>{app.source === 'live' ? 'QDN' : 'Seed'}</dd>
-                              </div>
-                            </dl>
-                            <div className="catalog-actions">
-                              <button type="button" onClick={() => openCatalogApp(app)}>
-                                Open app
-                              </button>
-                              <button className="secondary" type="button" onClick={() => copyCatalogAddress(app)}>
-                                Copy QDN
-                              </button>
-                              {app.repo ? (
-                                <a href={app.repo} target="_blank" rel="noreferrer">
-                                  Repository
-                                </a>
-                              ) : null}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Node resource search</h2>
-                  <p>Read-only lookup through Qortium Home or a local Previewnet node.</p>
-                </div>
-                <div className="segmented-control" role="group" aria-label="QDN service">
-                  {SEARCH_SERVICES.map((service) => (
-                    <button
-                      className={searchService === service ? 'active' : ''}
-                      key={service}
-                      onClick={() => selectSearchService(service)}
-                      type="button"
-                    >
-                      {service}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <form className="search-row" onSubmit={searchResources}>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Qortium"
-                  aria-label={`Search QDN ${searchService} resources`}
-                />
-                <button type="submit" disabled={isSearching || !canSearchQdn}>
-                  {isSearching ? 'Searching' : 'Search'}
-                </button>
-              </form>
-              <div className="resource-list">
-                {resources.map((resource, index) => (
-                  <article className="resource-item" key={getResourceKey(resource, index)}>
-                    <div>
-                      <strong>{getResourceTitle(resource)}</strong>
-                      <span>{resourceAddress(resource)}</span>
+                          </div>
+                          <p>{app.summary}</p>
+                          <div className="catalog-actions">
+                            <button type="button" onClick={() => openCatalogApp(app)}>
+                              Open App
+                            </button>
+                            <button className="secondary" type="button" onClick={() => copyCatalogAddress(app)}>
+                              Copy Link
+                            </button>
+                            {app.repo ? (
+                              <a href={app.repo} target="_blank" rel="noreferrer">
+                                Repository
+                              </a>
+                            ) : null}
+                          </div>
+                        </article>
+                      ))}
                     </div>
-                    <span className="status-pill neutral">{formatResourceStatus(resource)}</span>
-                  </article>
-                ))}
-                {!resources.length ? <div className="empty-state">No live {searchService} resources loaded.</div> : null}
-              </div>
-            </section>
+                  </div>
+                </details>
+              ))}
+            </div>
           </section>
         ) : null}
 
-        {activeTab === 'priorities' ? (
+        {activeTab === 'todo' ? (
           <section className="panel">
             <div className="section-heading">
-              <div>
-                <h2>Priorities</h2>
-                <p>Source: {sourceLabel(resourceSources.priorities)}</p>
-                <small className="source-note">{QDN_CONTRACTS.priorities.resource}</small>
-              </div>
+              <h2>To-Do & Priorities</h2>
             </div>
             <div className="priority-list">
               {priorities.map((item) => (
@@ -806,11 +599,7 @@ export function App() {
         {activeTab === 'worklog' ? (
           <section className="panel">
             <div className="section-heading">
-              <div>
-                <h2>Work Log</h2>
-                <p>Source: {sourceLabel(resourceSources.workLog)}</p>
-                <small className="source-note">{QDN_CONTRACTS.workLog.resource}</small>
-              </div>
+              <h2>Work Log</h2>
             </div>
             <div className="timeline">
               {workLog.map((entry) => (
@@ -832,66 +621,16 @@ export function App() {
           </section>
         ) : null}
 
-        {activeTab === 'metrics' ? (
-          <section className="panel">
-            <div className="section-heading">
-              <div>
-                <h2>Metrics</h2>
-                <p>First-pass operational counters before resource-specific activity metrics are ported.</p>
-              </div>
-            </div>
-            <div className="metric-grid">
-              <article>
-                <span>Bridge actions</span>
-                <strong>{bridgeState?.actions.length ?? 0}</strong>
-              </article>
-              <article>
-                <span>Node connections</span>
-                <strong>{formatCount(nodeStatus?.numberOfConnections)}</strong>
-              </article>
-              <article>
-                <span>Priority items</span>
-                <strong>{priorities.length}</strong>
-              </article>
-              <article>
-                <span>Work log entries</span>
-                <strong>{workLog.length}</strong>
-              </article>
-              <article>
-                <span>Catalog apps</span>
-                <strong>{catalogApps.length}</strong>
-              </article>
-            </div>
-          </section>
-        ) : null}
-
         {activeTab === 'support' ? (
           <section className="stack">
             <section className="panel">
               <div className="section-heading">
-                <div>
-                  <h2>Support</h2>
-                  <p>Contribution signals and funding addresses for ongoing Qortium work.</p>
-                </div>
+                <h2>Support</h2>
               </div>
-              <div className="support-grid">
-                <article>
-                  <h3>Test Previewnet builds</h3>
-                  <p>Run Home, open the QDN apps, and report broken flows with the exact screen and node mode.</p>
-                </article>
-                <article>
-                  <h3>Review priorities</h3>
-                  <p>Use this app as the staging area for poll-backed prioritization once writes are enabled.</p>
-                </article>
-                <article>
-                  <h3>Improve the catalog</h3>
-                  <p>Add app descriptions, live QDN identifiers, screenshots, and release status as they stabilize.</p>
-                </article>
-                <article>
-                  <h3>Publish data resources</h3>
-                  <p>Keep priorities in {QDN_CONTRACTS.priorities.resource} and work-log entries in {QDN_CONTRACTS.workLog.resource}.</p>
-                </article>
-              </div>
+              <p>
+                The best ways to support this work: run Qortium Home, try the apps, and report what breaks. If you
+                want to help fund development, any of the addresses below is appreciated.
+              </p>
             </section>
 
             <section className="panel">
@@ -969,18 +708,21 @@ export function App() {
                   value={donationSend.amount}
                 />
               </label>
-              <label>
-                Fee rate
-                <input
-                  aria-label={`Fee rate in atomic units per byte for ${donationSend.donation.coin}`}
-                  inputMode="numeric"
-                  min="0"
-                  onChange={(event) => updateDonationSendField('feeAtomsPerByte', event.target.value)}
-                  step="1"
-                  type="number"
-                  value={donationSend.feeAtomsPerByte}
-                />
-              </label>
+              <details className="advanced-toggle">
+                <summary>Advanced</summary>
+                <label>
+                  Fee rate
+                  <input
+                    aria-label={`Fee rate in atomic units per byte for ${donationSend.donation.coin}`}
+                    inputMode="numeric"
+                    min="0"
+                    onChange={(event) => updateDonationSendField('feeAtomsPerByte', event.target.value)}
+                    step="1"
+                    type="number"
+                    value={donationSend.feeAtomsPerByte}
+                  />
+                </label>
+              </details>
               <code title={donationSend.donation.address}>{donationSend.donation.address}</code>
               {donationSend.error ? <div className="form-error">{donationSend.error}</div> : null}
               <div className="modal-actions">

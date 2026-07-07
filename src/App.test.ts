@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { TABS, formatNodeStatus, formatResourceStatus } from './App';
+import { TABS, formatNodeStatus, getTabFromHash } from './App';
 
 describe('tabs', () => {
-  it('keeps contributions under Support instead of a standalone donate page', () => {
-    expect(TABS).toContainEqual({ id: 'support', label: 'Support' });
-    expect(TABS.some((tab) => String(tab.id) === 'donate')).toBe(false);
+  it('exports the personal site tabs', () => {
+    expect(TABS).toEqual([
+      { id: 'about', label: 'About' },
+      { id: 'apps', label: 'Apps' },
+      { id: 'todo', label: 'To-Do' },
+      { id: 'worklog', label: 'Work Log' },
+      { id: 'support', label: 'Support' },
+    ]);
+  });
+
+  it('defaults empty and unknown hashes to apps', () => {
+    expect(getTabFromHash('')).toBe('apps');
+    expect(getTabFromHash('#unknown')).toBe('apps');
+  });
+
+  it('maps legacy hashes to current tabs', () => {
+    expect(getTabFromHash('#overview')).toBe('about');
+    expect(getTabFromHash('#priorities')).toBe('todo');
+    expect(getTabFromHash('#metrics')).toBe('apps');
+    expect(getTabFromHash('#donate')).toBe('support');
   });
 });
 
@@ -19,22 +36,5 @@ describe('formatNodeStatus', () => {
 
   it('uses connected state when sync metadata is sparse', () => {
     expect(formatNodeStatus({ height: 123 })).toBe('Connected');
-  });
-});
-
-describe('formatResourceStatus', () => {
-  it('accepts object-shaped QDN status responses', () => {
-    expect(
-      formatResourceStatus({
-        name: 'QuickMythril',
-        service: 'WEBSITE',
-        status: {
-          description: 'Ready',
-          id: 'READY',
-          status: 'READY',
-          title: 'Ready',
-        },
-      }),
-    ).toBe('READY');
   });
 });

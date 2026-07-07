@@ -1,7 +1,9 @@
 # Qortium Workbench
 
-Qortium Workbench is a QDN website for tracking the Qortium app surface, roadmap
-priorities, work log, lightweight metrics, and contribution signals.
+Qortium Workbench is QuickMythril's personal QDN website: an About page, the
+Qortium app catalog, a to-do/priorities board, a work log, and a support page
+with donation addresses. It is modeled on the original gf089-site (Q-Workbench)
+from Qortal, with the technical runtime machinery kept out of sight.
 
 It is intentionally separate from `qortium-site`: the public site remains the
 clean explanatory website for `qortium.app`, while this app is the operational
