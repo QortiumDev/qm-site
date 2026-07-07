@@ -1,3 +1,17 @@
+@font-face {
+  font-family: "Lexend";
+  src: url("./assets/fonts/lexend/Lexend-Variable.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/inter-latin-wght-normal.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 100 900;
+}
+
 :root {
   color: #dfe7f1;
   background: #0b0e12;
@@ -10,6 +24,7 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  font-size: 16px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --bg: #0b0e12;
@@ -151,23 +166,23 @@
 }
 
 :root[data-text-size="extra-small"] {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 :root[data-text-size="small"] {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 :root[data-text-size="large"] {
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 
 :root[data-text-size="extra-large"] {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 :root[data-text-size="huge"] {
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 * {
@@ -236,7 +251,7 @@ code {
   background: var(--panel-soft);
   color: var(--ink);
   font-family: "Illinois Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
   padding: 8px;
 }
 
@@ -288,7 +303,7 @@ code {
 .chip {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -345,17 +360,17 @@ h3 {
 }
 
 h1 {
-  font-size: 31px;
+  font-size: 1.9375rem;
   line-height: 1.1;
 }
 
 h2 {
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1.2;
 }
 
 h3 {
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.25;
 }
 
@@ -491,7 +506,7 @@ p {
 
 .catalog-card-title small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
@@ -570,12 +585,12 @@ p {
 
 .priority-score strong {
   color: var(--accent-strong);
-  font-size: 28px;
+  font-size: 1.75rem;
 }
 
 .priority-score span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -599,7 +614,7 @@ p {
 .tag-row span {
   border-radius: 999px;
   background: var(--panel-soft);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 750;
   padding: 4px 8px;
 }
@@ -638,7 +653,7 @@ p {
 .coin-heading p {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .coin-badge {
@@ -736,7 +751,7 @@ p {
   border-radius: 999px;
   background: var(--panel-soft);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
   padding: 8px 10px;
 }
@@ -751,7 +766,7 @@ p {
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -789,19 +804,19 @@ p {
 }
 
 .about-card .label {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
 .muted-note {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .advanced-toggle summary {
   cursor: pointer;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -911,7 +926,7 @@ p {
   }
 
   h1 {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
 
   .priority-score {
@@ -920,4 +935,57 @@ p {
     border-left: 0;
     padding-top: 10px;
   }
+}
+
+:root[data-ui="modern"] {
+  color: #0D0D0D;
+  background: #F2EFE6;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bg: #F2EFE6;
+  --sidebar: #F2EFE6;
+  --panel: #FFFFFF;
+  --card: #F7F4EC;
+  --panel-soft: #F7F4EC;
+  --ink: #0D0D0D;
+  --muted: #6B6B6B;
+  --line: #DDD9D0;
+  --line-strong: #DDD9D0;
+  --shadow: none;
+}
+
+:root[data-theme="dark"][data-ui="modern"] {
+  color: #E4E8F0;
+  background: #111318;
+  --bg: #111318;
+  --sidebar: #111318;
+  --panel: #1C1F28;
+  --card: #222633;
+  --panel-soft: #222633;
+  --ink: #E4E8F0;
+  --muted: #8892A4;
+  --line: #2E3340;
+  --line-strong: #2E3340;
+  --shadow: none;
+}
+
+:root[data-ui="modern"] .workspace {
+  max-width: 56.25em;
+  margin-inline: auto;
+}
+
+:root[data-ui="modern"] .panel,
+:root[data-ui="modern"] .apps-group,
+:root[data-ui="modern"] .catalog-card,
+:root[data-ui="modern"] .donation-card,
+:root[data-ui="modern"] .priority-item,
+:root[data-ui="modern"] .timeline-item,
+:root[data-ui="modern"] .notice,
+:root[data-ui="modern"] .send-modal {
+  border-width: 1.5px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+:root[data-ui="modern"] button:not(.secondary):not(.refresh-button):not(.tab-button):not(.icon-button) {
+  border-radius: 50px;
 }

@@ -181,15 +181,6 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     summary: 'Game metadata browser and emulator launcher.',
   },
   {
-    category: 'Games',
-    identifier: 'ChibiHub',
-    name: 'ChibiHub',
-    publisher: 'Qortium',
-    repo: 'https://github.com/QortiumDev/chibihub',
-    section: 'my',
-    summary: 'QDN app hub for the ChibiHub project.',
-  },
-  {
     category: 'Social',
     identifier: 'Quest',
     name: 'Quest',

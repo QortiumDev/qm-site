@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyDisplaySettings,
   getDisplaySettingsUpdateFromMessage,
+  getInitialDisplaySettings,
   normalizeAccent,
   normalizeTheme,
+  normalizeUiStyle,
 } from './displaySettings';
 
 describe('display settings', () => {
@@ -17,6 +19,7 @@ describe('display settings', () => {
       style: {} as Record<string, string>,
     };
 
+    vi.unstubAllGlobals();
     vi.stubGlobal('document', { documentElement });
   });
 
@@ -25,22 +28,73 @@ describe('display settings', () => {
     expect(normalizeTheme('system')).toBeNull();
     expect(normalizeAccent('BLUE')).toBe('blue');
     expect(normalizeAccent('neon')).toBeNull();
+    expect(normalizeUiStyle('modern')).toBe('modern');
+    expect(normalizeUiStyle(' modern ')).toBe('modern');
+    expect(normalizeUiStyle('Modern')).toBe('modern');
+    expect(normalizeUiStyle('future')).toBe('classic');
+    expect(normalizeUiStyle(undefined)).toBe('classic');
   });
 
   it('applies settings to the root dataset', () => {
-    applyDisplaySettings({ accent: 'orange', textSize: 'large', theme: 'dark' });
+    applyDisplaySettings({ accent: 'orange', textSize: 'large', theme: 'dark', ui: 'modern' });
 
     expect(document.documentElement.dataset.accent).toBe('orange');
     expect(document.documentElement.dataset.textSize).toBe('large');
     expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.dataset.ui).toBe('modern');
+  });
+
+  it('reads ui style from query params and defaults unknown values to classic', () => {
+    vi.stubGlobal('window', {
+      location: {
+        search: '?uiStyle=modern',
+      },
+    });
+
+    expect(getInitialDisplaySettings().ui).toBe('modern');
+
+    vi.stubGlobal('window', {
+      location: {
+        search: '?_qdnUiStyle=future',
+      },
+    });
+
+    expect(getInitialDisplaySettings().ui).toBe('classic');
+  });
+
+  it('reads ui style from host globals', () => {
+    vi.stubGlobal('window', {
+      _qdnUiStyle: 'modern',
+      location: {
+        search: '',
+      },
+    });
+
+    expect(getInitialDisplaySettings().ui).toBe('modern');
   });
 
   it('accepts qdn-prefixed display setting messages', () => {
     expect(
       getDisplaySettingsUpdateFromMessage(
-        { action: 'DISPLAY_SETTINGS_CHANGED', qdnAccent: 'blue', qdnTheme: 'dark', qdnTextSize: 'huge' },
-        { accent: 'green', textSize: 'medium', theme: 'light' },
+        { action: 'DISPLAY_SETTINGS_CHANGED', qdnAccent: 'blue', qdnTheme: 'dark', qdnTextSize: 'huge', uiStyle: 'modern' },
+        { accent: 'green', textSize: 'medium', theme: 'light', ui: 'classic' },
       ),
-    ).toEqual({ accent: 'blue', textSize: 'huge', theme: 'dark' });
+    ).toEqual({ accent: 'blue', textSize: 'huge', theme: 'dark', ui: 'modern' });
+  });
+
+  it('accepts ui style messages through the UI handler', () => {
+    expect(
+      getDisplaySettingsUpdateFromMessage(
+        { action: 'UI_STYLE_CHANGED', requestedHandler: 'UI', uiStyle: 'modern' },
+        { accent: 'green', textSize: 'medium', theme: 'light', ui: 'classic' },
+      ),
+    ).toEqual({ accent: 'green', textSize: 'medium', theme: 'light', ui: 'modern' });
+
+    expect(
+      getDisplaySettingsUpdateFromMessage(
+        { action: 'UI_STYLE_CHANGED', requestedHandler: 'OTHER', uiStyle: 'modern' },
+        { accent: 'green', textSize: 'medium', theme: 'light', ui: 'classic' },
+      ),
+    ).toBeNull();
   });
 });

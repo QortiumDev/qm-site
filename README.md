@@ -53,9 +53,12 @@ standalone Donate page and QORT address remain removed for now.
 ## Qortium Home Display Settings
 
 The UI honors QDN display parameters from Qortium Home, including `qdnTheme`,
-`qdnAccent`, and `qdnTextSize`. It also accepts the older unprefixed `theme`,
-`accent`, and `textSize` query parameters, plus matching message events from the
-host window.
+`qdnAccent`, `qdnTextSize`, and `uiStyle`. Classic UI is the default; modern UI
+can be requested with `?uiStyle=modern` or a `UI_STYLE_CHANGED` postMessage. It
+also accepts the older unprefixed `theme`, `accent`, and `textSize` query
+parameters, plus matching message events from the host window. Lexend and Inter
+are bundled so both classic and modern modes render without external font
+requests.
 
 ## Development
 

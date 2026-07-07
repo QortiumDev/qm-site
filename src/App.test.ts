@@ -6,10 +6,14 @@ describe('tabs', () => {
     expect(TABS).toEqual([
       { id: 'about', label: 'About' },
       { id: 'apps', label: 'Apps' },
-      { id: 'todo', label: 'To-Do' },
-      { id: 'worklog', label: 'Work Log' },
+      { hidden: true, id: 'todo', label: 'To-Do' },
+      { hidden: true, id: 'worklog', label: 'Work Log' },
       { id: 'support', label: 'Support' },
     ]);
+  });
+
+  it('shows only the public navigation tabs in the menu', () => {
+    expect(TABS.filter((tab) => !tab.hidden).map((tab) => tab.id)).toEqual(['about', 'apps', 'support']);
   });
 
   it('defaults empty and unknown hashes to apps', () => {
@@ -22,6 +26,8 @@ describe('tabs', () => {
     expect(getTabFromHash('#priorities')).toBe('todo');
     expect(getTabFromHash('#metrics')).toBe('apps');
     expect(getTabFromHash('#donate')).toBe('support');
+    expect(getTabFromHash('#todo')).toBe('todo');
+    expect(getTabFromHash('#worklog')).toBe('worklog');
   });
 });
 

@@ -37,6 +37,11 @@ import {
 const APP_TITLE = 'Qortium Workbench';
 
 type TabId = 'about' | 'apps' | 'todo' | 'worklog' | 'support';
+type TabDefinition = {
+  hidden?: boolean;
+  id: TabId;
+  label: string;
+};
 type DonationSendState = {
   amount: string;
   balanceAtoms: bigint | null;
@@ -52,11 +57,11 @@ type SendCoinResult = {
   [key: string]: unknown;
 };
 
-export const TABS: { id: TabId; label: string }[] = [
+export const TABS: TabDefinition[] = [
   { id: 'about', label: 'About' },
   { id: 'apps', label: 'Apps' },
-  { id: 'todo', label: 'To-Do' },
-  { id: 'worklog', label: 'Work Log' },
+  { hidden: true, id: 'todo', label: 'To-Do' },
+  { hidden: true, id: 'worklog', label: 'Work Log' },
   { id: 'support', label: 'Support' },
 ];
 
@@ -476,7 +481,7 @@ export function App() {
           </div>
         </div>
         <nav className="tab-list">
-          {TABS.map((tab) => (
+          {TABS.filter((tab) => !tab.hidden).map((tab) => (
             <button
               className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
               key={tab.id}
