@@ -11,6 +11,7 @@ import {
   getDisplaySettingsUpdateFromMessage,
   getInitialDisplaySettings,
 } from './displaySettings';
+import { copyTextToClipboard } from './clipboard';
 import {
   SUPPORT_DONATIONS,
   atomicToCoinString,
@@ -337,16 +338,14 @@ export function App() {
   }
 
   async function copyText(value: string, copiedLabel: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setNotice(`Copied ${copiedLabel}.`);
-    } catch {
-      setNotice(value);
-    }
-  }
+    const didCopy = await copyTextToClipboard(value);
 
-  async function copyCatalogAddress(app: CatalogApp) {
-    await copyText(app.resource, app.resource);
+    if (didCopy) {
+      setNotice(`Copied ${copiedLabel}.`);
+      return;
+    }
+
+    setNotice(value);
   }
 
   async function copyDonationAddress(coin: string, address: string) {
@@ -470,6 +469,16 @@ export function App() {
     refreshRuntime();
   }, []);
 
+  useEffect(() => {
+    if (!notice) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setNotice('');
+    }, 4000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [notice]);
+
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="Workbench sections">
@@ -499,12 +508,7 @@ export function App() {
           <div>
             <h1>{TABS.find((tab) => tab.id === activeTab)?.label ?? APP_TITLE}</h1>
           </div>
-          <button className="refresh-button" type="button" onClick={refreshRuntime}>
-            Refresh
-          </button>
         </header>
-
-        {notice ? <div className="notice">{notice}</div> : null}
 
         {activeTab === 'about' ? (
           <section className="panel about-card">
@@ -563,7 +567,7 @@ export function App() {
             </div>
             <div className="catalog-section-list">
               {catalogSections.map((section) => (
-                <details className="apps-group" key={section.id} open={section.id === 'my'}>
+                <details className="apps-group" key={section.id} open>
                   <summary>
                     {section.title} <span>({section.apps.length})</span>
                   </summary>
@@ -583,12 +587,15 @@ export function App() {
                             <button type="button" onClick={() => openCatalogApp(app)}>
                               Open App
                             </button>
-                            <button className="secondary" type="button" onClick={() => copyCatalogAddress(app)}>
-                              Copy Link
-                            </button>
                             {app.repo ? (
-                              <a href={app.repo} target="_blank" rel="noreferrer">
-                                Repository
+                              <a
+                                href={app.repo}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  void copyText(app.repo ?? '', 'GitHub link');
+                                }}
+                              >
+                                GitHub
                               </a>
                             ) : null}
                           </div>
@@ -767,6 +774,11 @@ export function App() {
               </div>
             </form>
           </section>
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="notice notice-toast" role="status">
+          {notice}
         </div>
       ) : null}
     </main>

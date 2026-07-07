@@ -331,7 +331,7 @@ code {
 }
 
 .workspace {
-  width: min(1240px, 100%);
+  width: 100%;
   min-width: 0;
   padding: 22px 24px;
 }
@@ -380,14 +380,12 @@ p {
   line-height: 1.55;
 }
 
-.refresh-button,
 .secondary {
   border-color: var(--line-strong);
   background: var(--panel-soft);
   color: var(--ink);
 }
 
-.refresh-button:hover,
 .secondary:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--panel-soft));
@@ -771,10 +769,6 @@ p {
   text-transform: uppercase;
 }
 
-.about-card {
-  max-width: 860px;
-}
-
 .about-card h3 {
   margin-top: 22px;
 }
@@ -986,6 +980,17 @@ p {
   box-shadow: none;
 }
 
-:root[data-ui="modern"] button:not(.secondary):not(.refresh-button):not(.tab-button):not(.icon-button) {
+:root[data-ui="modern"] button:not(.secondary):not(.tab-button):not(.icon-button) {
   border-radius: 50px;
+}
+
+.notice-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 60;
+  max-width: min(90vw, 560px);
+  margin: 0;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+  transform: translateX(-50%);
 }
