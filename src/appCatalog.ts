@@ -1,7 +1,7 @@
 import { getNodeApiUrl } from './qdnRequest';
 import type { QdnResource } from './types';
 
-export type CatalogSectionId = 'my' | 'recommended' | 'community';
+export type CatalogSectionId = 'my' | 'recommended';
 
 export type CatalogAppSeed = {
   category: 'Core' | 'Home' | 'Explorer' | 'Social' | 'Operations' | 'Tools' | 'Games';
@@ -15,7 +15,7 @@ export type CatalogAppSeed = {
 
 export type CatalogApp = CatalogAppSeed & {
   created?: number;
-  iconUrl: string;
+  iconUrls: string[];
   resource: string;
   size?: number;
   source: 'live' | 'seed';
@@ -38,14 +38,9 @@ export const CATALOG_SECTION_DEFS: Omit<CatalogAppSection, 'apps'>[] = [
     title: 'My Qortium Apps',
   },
   {
-    description: "7R15's apps that complement the workspace and are recommended alongside the core Qortium tools.",
+    description: 'Apps from 7R15 and the wider community that pair well with the Qortium tools.',
     id: 'recommended',
     title: 'Recommended Apps',
-  },
-  {
-    description: 'Additional current QDN apps to keep visible while they build or stabilize.',
-    id: 'community',
-    title: 'Quest and Discussion Boards',
   },
 ];
 
@@ -199,7 +194,7 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     identifier: 'Quest',
     name: 'Quest',
     publisher: 'Quest',
-    section: 'community',
+    section: 'recommended',
     summary: 'Quest social app on QDN.',
   },
   {
@@ -207,7 +202,7 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     identifier: 'discussion-boards',
     name: 'Discussion_Boards',
     publisher: 'Discussion Boards',
-    section: 'community',
+    section: 'recommended',
     summary: 'Discussion boards, votes, polls, surveys, and messaging.',
   },
 ];
@@ -273,20 +268,29 @@ export function formatResourceSize(value: number | undefined) {
   return `${value.toLocaleString()} B`;
 }
 
+function getQdnBaseUrl() {
+  const currentOrigin = typeof window === 'undefined' ? '' : window.location.origin;
+  const currentPort = typeof window === 'undefined' ? '' : window.location.port;
+  const isViteDevOrigin = currentPort === '5173' || currentPort === '5174' || currentPort === '5175';
+
+  return isViteDevOrigin || !currentOrigin ? getNodeApiUrl() : currentOrigin;
+}
+
 export function getQdnRenderUrl(
   service: string,
   name: string,
   identifier: string | undefined,
   path = '',
 ) {
-  const currentOrigin = typeof window === 'undefined' ? '' : window.location.origin;
-  const currentPort = typeof window === 'undefined' ? '' : window.location.port;
-  const isViteDevOrigin = currentPort === '5173' || currentPort === '5174' || currentPort === '5175';
-  const baseUrl = isViteDevOrigin || !currentOrigin ? getNodeApiUrl() : currentOrigin;
+  const baseUrl = getQdnBaseUrl();
   const identifierSegment = identifier ? `/${encodeURIComponent(identifier)}` : '';
   const pathSegment = path ? `/${path.split('/').map(encodeURIComponent).join('/')}` : '';
 
   return `${baseUrl}/render/${encodeURIComponent(service)}/${encodeURIComponent(name)}${identifierSegment}${pathSegment}`;
+}
+
+export function getThumbnailAvatarUrl(name: string) {
+  return `${getQdnBaseUrl()}/arbitrary/THUMBNAIL/${encodeURIComponent(name)}/avatar`;
 }
 
 export function getQdnAddress(service: string, name: string, identifier: string | undefined) {
@@ -309,7 +313,10 @@ export function mergeCatalogResources(resources: QdnResource[]) {
     return {
       ...seed,
       created: live?.created,
-      iconUrl: getQdnRenderUrl('APP', seed.name, seed.identifier, 'favicon.ico'),
+      iconUrls: [
+        getQdnRenderUrl('APP', seed.name, seed.identifier, 'favicon.ico'),
+        getThumbnailAvatarUrl(seed.name),
+      ],
       resource: getQdnAddress('APP', seed.name, seed.identifier),
       size: live?.size,
       source: live ? 'live' : 'seed',

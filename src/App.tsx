@@ -13,6 +13,7 @@ import {
 } from './displaySettings';
 import {
   SUPPORT_DONATIONS,
+  atomicToCoinString,
   getDefaultFeeAtomsPerByte,
   truncateDonationAddress,
   validateDonationAmount,
@@ -38,6 +39,7 @@ const APP_TITLE = 'Qortium Workbench';
 type TabId = 'about' | 'apps' | 'todo' | 'worklog' | 'support';
 type DonationSendState = {
   amount: string;
+  balanceAtoms: bigint | null;
   balanceLabel: string;
   donation: DonationAddress;
   error: string;
@@ -91,18 +93,26 @@ function getResultString(value: unknown) {
   return '';
 }
 
-function formatWalletBalance(value: unknown, coin: string) {
+function getWalletBalanceAtoms(value: unknown): bigint | null {
   const direct = getResultString(value);
 
-  if (direct) return `${direct} ${coin}`;
+  if (/^\d+$/.test(direct)) return BigInt(direct);
 
   if (isRecord(value)) {
     for (const key of ['balance', 'confirmedBalance', 'total', 'available', 'walletBalance']) {
       const nested = getResultString(value[key]);
 
-      if (nested) return `${nested} ${coin}`;
+      if (/^\d+$/.test(nested)) return BigInt(nested);
     }
   }
+
+  return null;
+}
+
+function formatWalletBalance(value: unknown, coin: string) {
+  const atoms = getWalletBalanceAtoms(value);
+
+  if (atoms !== null) return `${atomicToCoinString(atoms)} ${coin}`;
 
   return 'Unavailable';
 }
@@ -115,7 +125,7 @@ function formatTransactionHash(result: SendCoinResult | string | null | undefine
 }
 
 function AppIcon({ app }: { app: CatalogApp }) {
-  const [hasFailed, setHasFailed] = useState(false);
+  const [iconIndex, setIconIndex] = useState(0);
   const label = app.title || app.identifier;
   const initials = label
     .split(/\s+/)
@@ -125,10 +135,12 @@ function AppIcon({ app }: { app: CatalogApp }) {
     .join('') || app.identifier.slice(0, 2).toUpperCase();
 
   useEffect(() => {
-    setHasFailed(false);
-  }, [app.iconUrl]);
+    setIconIndex(0);
+  }, [app.identifier, app.name, app.iconUrls]);
 
-  if (hasFailed) {
+  const iconUrl = app.iconUrls[iconIndex];
+
+  if (!iconUrl) {
     return (
       <div className="app-icon app-icon-fallback" aria-hidden="true">
         {initials}
@@ -141,8 +153,8 @@ function AppIcon({ app }: { app: CatalogApp }) {
       alt=""
       className="app-icon"
       loading="lazy"
-      onError={() => setHasFailed(true)}
-      src={app.iconUrl}
+      onError={() => setIconIndex((current) => current + 1)}
+      src={iconUrl}
     />
   );
 }
@@ -340,7 +352,7 @@ export function App() {
     if (!canFetchWalletBalance) {
       setDonationSend((current) =>
         current?.donation.coin === donation.coin
-          ? { ...current, balanceLabel: 'Unavailable', isFetchingBalance: false }
+          ? { ...current, balanceAtoms: null, balanceLabel: 'Unavailable', isFetchingBalance: false }
           : current,
       );
       return;
@@ -354,13 +366,18 @@ export function App() {
 
       setDonationSend((current) =>
         current?.donation.coin === donation.coin
-          ? { ...current, balanceLabel: formatWalletBalance(balance, donation.coin), isFetchingBalance: false }
+          ? {
+              ...current,
+              balanceAtoms: getWalletBalanceAtoms(balance),
+              balanceLabel: formatWalletBalance(balance, donation.coin),
+              isFetchingBalance: false,
+            }
           : current,
       );
     } catch {
       setDonationSend((current) =>
         current?.donation.coin === donation.coin
-          ? { ...current, balanceLabel: 'Unavailable', isFetchingBalance: false }
+          ? { ...current, balanceAtoms: null, balanceLabel: 'Unavailable', isFetchingBalance: false }
           : current,
       );
     }
@@ -375,6 +392,7 @@ export function App() {
     setNotice('');
     setDonationSend({
       amount: '',
+      balanceAtoms: null,
       balanceLabel: 'Fetching...',
       donation,
       error: '',
@@ -398,7 +416,7 @@ export function App() {
 
     if (!donationSend) return;
 
-    const amountValidation = validateDonationAmount(donationSend.amount);
+    const amountValidation = validateDonationAmount(donationSend.amount, donationSend.balanceAtoms);
 
     if (!amountValidation.ok) {
       setDonationSend((current) => (current ? { ...current, error: amountValidation.error } : current));
@@ -487,22 +505,24 @@ export function App() {
           <section className="panel about-card">
             <h2>About me</h2>
             <p>
-              I'm QuickMythril, a builder on Qortium focused on practical, durable software for a decentralized web.
-              I care about tools that keep working, reduce dependence on gatekeepers, and give people direct control
-              over their data, identity, and distribution.
+              I'm QuickMythril, a builder on Qortium — a community-run internet platform where sharing posts and
+              media, messaging, publishing sites and apps, and storing files all happen on one network that no company
+              controls. I used to build on Qortal; Qortium continues that work with different goals and tradeoffs, and
+              everything I make now ships here first.
             </p>
             <h3>What drives my work</h3>
             <ul>
-              <li>Sovereignty over convenience.</li>
-              <li>Reliability first.</li>
-              <li>Small, composable pieces.</li>
-              <li>Privacy by default.</li>
+              <li>No one above the network. There is no company that can ban or censor you; you decide locally what you see.</li>
+              <li>Your keys, your names, your content. Accounts and published data stay yours — portable, and deletable when you choose.</li>
+              <li>Reachable by everyone. Nodes work behind blocking routers and can route through I2P to keep your IP private.</li>
+              <li>Community direction. Account reputation shapes minting and voting, and open community voting is being built.</li>
             </ul>
             <h3>Why Qortium</h3>
             <p>
-              Qortium continues the protocol-first idea — distributed storage and publishing (QDN), community
-              consensus, identity that isn't rented — with a fresh network and app stack I'm actively building on
-              Previewnet.
+              Qortium is live today on Previewnet — a preview network for testing and shaping the protocol before a
+              permanent mainnet. It will be reset along the way, which makes now the best time to take part: run a
+              node, try the apps, and help decide what the platform becomes. There is no coin required by default,
+              names can be chosen and changed at any time, and one name can carry many apps.
             </p>
             <h3>Collaboration</h3>
             <p>
@@ -521,6 +541,10 @@ export function App() {
               <li>
                 <span className="label">This site</span>
                 <code>qdn://WEBSITE/QuickMythril/qm-site</code>
+              </li>
+              <li>
+                <span className="label">Project site</span>
+                <code>qortium.app</code>
               </li>
             </ul>
             <p className="muted-note">This site runs inside Qortium Home; all live features use the Home bridge.</p>
@@ -696,7 +720,7 @@ export function App() {
             </div>
             <form className="send-form" onSubmit={submitDonationSend}>
               <label>
-                Amount
+                Amount ({donationSend.donation.coin})
                 <input
                   aria-label={`Amount in ${donationSend.donation.coin}`}
                   inputMode="decimal"
@@ -711,7 +735,7 @@ export function App() {
               <details className="advanced-toggle">
                 <summary>Advanced</summary>
                 <label>
-                  Fee rate
+                  Fee rate (atomic units per byte)
                   <input
                     aria-label={`Fee rate in atomic units per byte for ${donationSend.donation.coin}`}
                     inputMode="numeric"
@@ -721,6 +745,9 @@ export function App() {
                     type="number"
                     value={donationSend.feeAtomsPerByte}
                   />
+                  <small className="muted-note">
+                    Default: {getDefaultFeeAtomsPerByte(donationSend.donation.coin)} for {donationSend.donation.coin}.
+                  </small>
                 </label>
               </details>
               <code title={donationSend.donation.address}>{donationSend.donation.address}</code>

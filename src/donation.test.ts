@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   SUPPORT_DONATIONS,
   atomicFeePerByteToCoinString,
+  atomicToCoinString,
+  coinStringToAtoms,
   getDefaultFeeAtomsPerByte,
   truncateDonationAddress,
   validateDonationAmount,
@@ -61,12 +63,41 @@ describe('support donation configuration', () => {
     expect(validateDonationAmount('')).toMatchObject({ ok: false });
     expect(validateDonationAmount('0')).toMatchObject({ ok: false });
     expect(validateDonationAmount('-1')).toMatchObject({ ok: false });
+    expect(validateDonationAmount('1.123456789')).toEqual({
+      error: 'Use at most 8 decimal places.',
+      ok: false,
+    });
+    expect(validateDonationAmount('1.00000001', 100_000_000n)).toEqual({
+      error: 'Amount exceeds the available balance.',
+      ok: false,
+    });
 
     expect(atomicFeePerByteToCoinString(100)).toBe('0.00000100');
     expect(validateDonationFeeAtomsPerByte('100')).toEqual({ feePerByte: '0.00000100', ok: true });
     expect(validateDonationFeeAtomsPerByte('')).toEqual({ feePerByte: undefined, ok: true });
     expect(validateDonationFeeAtomsPerByte('0')).toEqual({ feePerByte: undefined, ok: true });
     expect(validateDonationFeeAtomsPerByte('-1')).toMatchObject({ ok: false });
+    expect(validateDonationFeeAtomsPerByte('1.5')).toEqual({
+      error: 'Fee rate must be a whole number of atomic units per byte.',
+      ok: false,
+    });
+    expect(validateDonationFeeAtomsPerByte('1000001')).toEqual({
+      error: 'Fee rate is unreasonably high.',
+      ok: false,
+    });
     expect(validateDonationFeeAtomsPerByte('abc')).toMatchObject({ ok: false });
+  });
+
+  it('converts between atomic units and decimal coin strings', () => {
+    expect(atomicToCoinString('100002')).toBe('0.00100002');
+    expect(atomicToCoinString(100_000_000n)).toBe('1');
+    expect(atomicToCoinString(123_450_000n)).toBe('1.2345');
+
+    expect(coinStringToAtoms('0.00100002')).toBe(100002n);
+    expect(coinStringToAtoms('1')).toBe(100_000_000n);
+    expect(coinStringToAtoms('1.2345')).toBe(123_450_000n);
+    expect(coinStringToAtoms(atomicToCoinString('100002'))).toBe(100002n);
+    expect(coinStringToAtoms('1.123456789')).toBeNull();
+    expect(coinStringToAtoms('abc')).toBeNull();
   });
 });

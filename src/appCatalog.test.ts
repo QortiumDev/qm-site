@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatResourceSize, groupCatalogApps, mergeCatalogResources } from './appCatalog';
+import {
+  formatResourceSize,
+  getThumbnailAvatarUrl,
+  groupCatalogApps,
+  mergeCatalogResources,
+} from './appCatalog';
 
 describe('app catalog', () => {
   it('merges live QDN metadata into known Qortium app identities', () => {
@@ -21,6 +26,10 @@ describe('app catalog', () => {
     const chat = apps.find((app) => app.name === 'Chat');
 
     expect(chat).toMatchObject({
+      iconUrls: [
+        'http://127.0.0.1:24891/render/APP/Chat/Chat/favicon.ico',
+        'http://127.0.0.1:24891/arbitrary/THUMBNAIL/Chat/avatar',
+      ],
       resource: 'qdn://APP/Chat/Chat',
       source: 'live',
       status: 'READY',
@@ -29,7 +38,7 @@ describe('app catalog', () => {
     });
   });
 
-  it('groups owned, recommended, and additional current apps separately', () => {
+  it('groups owned and recommended apps with Quest and Discussion Boards in recommended', () => {
     const sections = groupCatalogApps(mergeCatalogResources([
       {
         created: 1000,
@@ -69,14 +78,30 @@ describe('app catalog', () => {
     expect(sections.map((section) => section.title)).toEqual([
       'My Qortium Apps',
       'Recommended Apps',
-      'Quest and Discussion Boards',
     ]);
     expect(sections.find((section) => section.id === 'my')?.apps.map((app) => app.name)).toContain('Chat');
     expect(sections.find((section) => section.id === 'recommended')?.apps.map((app) => app.name)).toContain('Apps');
-    expect(sections.find((section) => section.id === 'community')?.apps.map((app) => app.resource).sort()).toEqual([
+    expect(sections.find((section) => section.id === 'recommended')?.description).toBe(
+      'Apps from 7R15 and the wider community that pair well with the Qortium tools.',
+    );
+    expect(sections.find((section) => section.id === 'recommended')?.apps.map((app) => app.resource).sort()).toEqual([
+      'qdn://APP/Apps/Apps',
+      'qdn://APP/Chain/Chain',
       'qdn://APP/Discussion_Boards/discussion-boards',
+      'qdn://APP/Groups/Groups',
+      'qdn://APP/Library/Library',
+      'qdn://APP/Names/Names',
+      'qdn://APP/Profile/Profile',
+      'qdn://APP/Publish/Publish',
       'qdn://APP/Quest/Quest',
+      'qdn://APP/Wallet/Wallet',
     ]);
+  });
+
+  it('builds thumbnail avatar URLs from the same node base as render URLs', () => {
+    expect(getThumbnailAvatarUrl('Discussion_Boards')).toBe(
+      'http://127.0.0.1:24891/arbitrary/THUMBNAIL/Discussion_Boards/avatar',
+    );
   });
 
   it('formats resource sizes compactly', () => {

@@ -810,6 +810,11 @@ p {
   margin-top: 10px;
 }
 
+.advanced-toggle .muted-note {
+  font-weight: 750;
+  text-transform: none;
+}
+
 .form-error {
   border: 1px solid color-mix(in srgb, var(--red) 60%, var(--line));
   border-radius: 8px;

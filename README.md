@@ -45,8 +45,10 @@ The Support page shows donation addresses and Home-mediated send buttons for:
 
 Addresses can be copied in any browser. The send buttons call Qortium Home's
 `SEND_COIN` bridge action and require an unlocked Home account with a local or
-trusted writable node. The old standalone Donate page and QORT address remain
-removed for now.
+trusted writable node. Balances from `GET_WALLET_BALANCE` are atomic units and
+are converted for display; `SEND_COIN` amounts and `feePerByte` are decimal coin
+strings, with `feePerByte` converted from the atoms-per-byte input. The old
+standalone Donate page and QORT address remain removed for now.
 
 ## Qortium Home Display Settings
 
