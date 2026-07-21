@@ -280,6 +280,12 @@ export function getQdnRenderUrl(
   return `${baseUrl}/render/${encodeURIComponent(service)}/${encodeURIComponent(name)}${identifierSegment}${pathSegment}`;
 }
 
+export function getQdnArbitraryUrl(service: string, name: string, identifier: string | undefined) {
+  const identifierSegment = identifier ? `/${encodeURIComponent(identifier)}` : '';
+
+  return `${getQdnBaseUrl()}/arbitrary/${encodeURIComponent(service)}/${encodeURIComponent(name)}${identifierSegment}`;
+}
+
 export function getThumbnailAvatarUrl(name: string) {
   return `${getQdnBaseUrl()}/arbitrary/THUMBNAIL/${encodeURIComponent(name)}/avatar`;
 }

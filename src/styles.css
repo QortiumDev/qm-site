@@ -994,3 +994,39 @@ p {
   box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
   transform: translateX(-50%);
 }
+
+.bgm {
+  flex: 0 0 auto;
+}
+
+/* Deliberately quieter than the filled base button — this is an ambient control, not a
+   primary action, so it sits back until hovered or actively playing. */
+.bgm-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-color: var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.bgm-button:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink);
+}
+
+.bgm-button.playing {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .bgm-label {
+    display: none;
+  }
+}

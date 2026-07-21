@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatResourceDate,
   getQdnRenderUrl,
@@ -11,6 +11,14 @@ import {
   getDisplaySettingsUpdateFromMessage,
   getInitialDisplaySettings,
 } from './displaySettings';
+import {
+  BGM_TRACK_LABEL,
+  getBgmSourceUrl,
+  getBgmVolume,
+  readBgmPreference,
+  shouldAttemptAutoplay,
+  writeBgmPreference,
+} from './backgroundMusic';
 import { copyTextToClipboard } from './clipboard';
 import {
   SUPPORT_DONATIONS,
@@ -128,6 +136,83 @@ function formatTransactionHash(result: SendCoinResult | string | null | undefine
   if (!isRecord(result)) return '';
 
   return getResultString(result.txHash) || getResultString(result.transactionHash) || getResultString(result.signature);
+}
+
+function BackgroundMusic() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const storage = typeof window === 'undefined' ? null : window.localStorage;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) return;
+
+    audio.volume = getBgmVolume();
+
+    if (!shouldAttemptAutoplay(readBgmPreference(storage))) {
+      return;
+    }
+
+    let disarm = () => {};
+
+    // Home (Electron) permits autoplay, so this resolves and playback starts on load. A
+    // browser rejects it instead, and we arm the first user gesture rather than retrying.
+    audio.play().catch(() => {
+      const startOnGesture = () => {
+        disarm();
+        audio.play().catch(() => {});
+      };
+
+      disarm = () => {
+        window.removeEventListener('pointerdown', startOnGesture);
+        window.removeEventListener('keydown', startOnGesture);
+      };
+
+      window.addEventListener('pointerdown', startOnGesture, { once: true });
+      window.addEventListener('keydown', startOnGesture, { once: true });
+    });
+
+    return () => disarm();
+  }, [storage]);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+
+    if (!audio) return;
+
+    if (audio.paused) {
+      audio.play().catch(() => {});
+      writeBgmPreference(storage, 'on');
+    } else {
+      audio.pause();
+      writeBgmPreference(storage, 'off');
+    }
+  };
+
+  return (
+    <div className="bgm">
+      <audio
+        loop
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+        preload="none"
+        ref={audioRef}
+        src={getBgmSourceUrl()}
+      />
+      <button
+        aria-label={`${isPlaying ? 'Pause' : 'Play'} background music — ${BGM_TRACK_LABEL}`}
+        aria-pressed={isPlaying}
+        className={isPlaying ? 'bgm-button playing' : 'bgm-button'}
+        onClick={toggle}
+        title={BGM_TRACK_LABEL}
+        type="button"
+      >
+        <span aria-hidden="true">{isPlaying ? '❚❚' : '►'}</span>
+        <span className="bgm-label">Music</span>
+      </button>
+    </div>
+  );
 }
 
 function AppIcon({ app }: { app: CatalogApp }) {
@@ -508,6 +593,7 @@ export function App() {
           <div>
             <h1>{TABS.find((tab) => tab.id === activeTab)?.label ?? APP_TITLE}</h1>
           </div>
+          <BackgroundMusic />
         </header>
 
         {activeTab === 'about' ? (
