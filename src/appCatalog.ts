@@ -313,6 +313,7 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
   },
   {
     category: 'Home',
+    featured: true,
     identifier: 'iffivabameeswebsite',
     name: 'iffi_vaba_mees',
     publisher: 'iffi',
@@ -493,8 +494,8 @@ export function mergeCatalogResources(resources: QdnResource[]) {
   });
 }
 
-export function getFeaturedCatalogApp(apps: CatalogApp[]) {
-  return apps.find((app) => app.featured);
+export function getFeaturedCatalogApps(apps: CatalogApp[]) {
+  return apps.filter((app) => app.featured);
 }
 
 export function groupCatalogApps(apps: CatalogApp[]): CatalogAppSection[] {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatResourceSize,
-  getFeaturedCatalogApp,
+  getFeaturedCatalogApps,
   getThumbnailAvatarUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -106,11 +106,15 @@ describe('app catalog', () => {
     ]));
   });
 
-  it('features 7R15’s Donation app as the catalog headline', () => {
+  it('features 7R15’s Donation app and iffi’s website as catalog headliners', () => {
     const apps = mergeCatalogResources([]);
+    const featured = getFeaturedCatalogApps(apps);
 
-    expect(apps[0]?.resource).toBe('qdn://APP/7R15M3G157U5/Donation');
-    expect(getFeaturedCatalogApp(apps)?.identifier).toBe('Donation');
+    expect(featured.map((app) => app.resource)).toEqual([
+      'qdn://APP/7R15M3G157U5/Donation',
+      'qdn://WEBSITE/iffi_vaba_mees/iffivabameeswebsite',
+    ]);
+    expect(apps.slice(0, 2).every((app) => app.featured)).toBe(true);
   });
 
   it('builds thumbnail avatar URLs from the same node base as render URLs', () => {
