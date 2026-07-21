@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatResourceDate,
+  getFeaturedCatalogApp,
   getQdnRenderUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -426,7 +427,11 @@ export function App() {
   const [donationSend, setDonationSend] = useState<DonationSendState | null>(null);
   const [notice, setNotice] = useState('');
 
-  const catalogSections = useMemo(() => groupCatalogApps(catalogApps), [catalogApps]);
+  const headlineApp = useMemo(() => getFeaturedCatalogApp(catalogApps), [catalogApps]);
+  const catalogSections = useMemo(
+    () => groupCatalogApps(catalogApps.filter((app) => !app.featured)),
+    [catalogApps],
+  );
   const canSendCoins = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'SEND_COIN'));
   const canFetchWalletBalance = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'GET_WALLET_BALANCE'));
 
@@ -763,6 +768,37 @@ export function App() {
             <div className="section-heading">
               <h2>Apps</h2>
             </div>
+            {headlineApp ? (
+              <article className="catalog-card catalog-headline">
+                <div className="catalog-card-head">
+                  <AppIcon app={headlineApp} />
+                  <div className="catalog-card-title">
+                    <h3>{headlineApp.title}</h3>
+                    <small>
+                      Featured · by {headlineApp.publisher} ·{' '}
+                      {formatResourceDate(headlineApp.updated ?? headlineApp.created)}
+                    </small>
+                  </div>
+                </div>
+                <p>{headlineApp.summary}</p>
+                <div className="catalog-actions">
+                  <button type="button" onClick={() => openCatalogApp(headlineApp)}>
+                    {headlineApp.service === 'WEBSITE' ? 'Open Site' : 'Open App'}
+                  </button>
+                  {headlineApp.repo ? (
+                    <a
+                      href={headlineApp.repo}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void copyText(headlineApp.repo ?? '', 'GitHub link');
+                      }}
+                    >
+                      GitHub
+                    </a>
+                  ) : null}
+                </div>
+              </article>
+            ) : null}
             <div className="catalog-section-list">
               {catalogSections.map((section) => (
                 <details className="apps-group" key={section.id} open>

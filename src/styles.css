@@ -516,6 +516,13 @@ p {
   grid-template-rows: auto auto 1fr;
 }
 
+.catalog-headline {
+  min-height: 0;
+  margin-bottom: 12px;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+
 .catalog-card-head {
   display: grid;
   grid-template-columns: 50px minmax(0, 1fr);

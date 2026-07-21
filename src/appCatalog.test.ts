@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatResourceSize,
+  getFeaturedCatalogApp,
   getThumbnailAvatarUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -53,25 +54,14 @@ describe('app catalog', () => {
       },
       {
         created: 1000,
-        identifier: 'Quest',
+        identifier: 'Chess',
         metadata: {
-          description: 'Quest Social',
-          title: 'Quest',
+          description: 'Play chess over Qortium chat',
+          title: 'Chess',
         },
-        name: 'Quest',
+        name: 'Chess',
         service: 'APP',
-        status: { status: 'BUILDING' },
-      },
-      {
-        created: 1000,
-        identifier: 'discussion-boards',
-        metadata: {
-          description: 'Discussions, votes, polls, and surveys',
-          title: 'Discussion Boards',
-        },
-        name: 'Discussion_Boards',
-        service: 'APP',
-        status: { status: 'BUILDING' },
+        status: { status: 'READY' },
       },
       {
         created: 1000,
@@ -97,9 +87,14 @@ describe('app catalog', () => {
       '7R15 Apps',
       'iffi Apps & Sites',
     ]);
-    expect(sections.find((section) => section.id === 'quickmythril')?.apps.map((app) => app.name)).toContain('Chat');
+    const quickmythrilApps = sections.find((section) => section.id === 'quickmythril')?.apps.map((app) => app.name);
+
+    expect(quickmythrilApps).toContain('Chat');
+    expect(quickmythrilApps).toContain('Chess');
+    expect(quickmythrilApps).not.toContain('Quest');
+    expect(quickmythrilApps).not.toContain('Discussion_Boards');
     expect(sections.find((section) => section.id === '7r15')?.apps.map((app) => app.resource)).toContain(
-      'qdn://APP/7R15M3G157U5/Donation',
+      'qdn://APP/aQuarium/aQuarium',
     );
     expect(sections.find((section) => section.id === 'iffi')?.apps).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -109,6 +104,13 @@ describe('app catalog', () => {
         title: 'iffi vaba mees personal web',
       }),
     ]));
+  });
+
+  it('features 7R15’s Donation app as the catalog headline', () => {
+    const apps = mergeCatalogResources([]);
+
+    expect(apps[0]?.resource).toBe('qdn://APP/7R15M3G157U5/Donation');
+    expect(getFeaturedCatalogApp(apps)?.identifier).toBe('Donation');
   });
 
   it('builds thumbnail avatar URLs from the same node base as render URLs', () => {

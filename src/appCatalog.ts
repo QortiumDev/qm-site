@@ -6,6 +6,7 @@ export type CatalogService = 'APP' | 'WEBSITE';
 
 export type CatalogAppSeed = {
   category: 'Core' | 'Home' | 'Explorer' | 'Social' | 'Operations' | 'Tools' | 'Games';
+  featured?: boolean;
   identifier: string;
   name: string;
   publisher: string;
@@ -204,24 +205,105 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
   },
   {
     category: 'Social',
-    identifier: 'Quest',
-    name: 'Quest',
-    publisher: 'Quest',
+    identifier: 'Boards',
+    name: 'Boards',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-boards',
     section: 'quickmythril',
     service: 'APP',
-    summary: 'Quest social app on QDN.',
+    summary: 'QDN discussion boards for Qortium communities.',
+  },
+  {
+    category: 'Home',
+    identifier: 'Bookmarks',
+    name: 'Bookmarks',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-bookmarks',
+    section: 'quickmythril',
+    service: 'APP',
+    summary: 'Qortium Home bookmarks, toolbar links, dashboard pins, and start pages.',
+  },
+  {
+    category: 'Games',
+    identifier: 'Chess',
+    name: 'Chess',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-chess',
+    section: 'quickmythril',
+    service: 'APP',
+    summary: 'Play chess over Qortium chat with on-chain game records.',
   },
   {
     category: 'Social',
-    identifier: 'discussion-boards',
-    name: 'Discussion_Boards',
-    publisher: 'Discussion Boards',
+    identifier: 'ChibiHub',
+    name: 'ChibiHub',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/chibihub',
     section: 'quickmythril',
     service: 'APP',
-    summary: 'Discussion boards, votes, polls, surveys, and messaging.',
+    summary: 'Chibi character hub for sharing art on QDN.',
+  },
+  {
+    category: 'Home',
+    identifier: 'Notify',
+    name: 'Notify',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-notify',
+    section: 'quickmythril',
+    service: 'APP',
+    summary: 'Qortium Home notification access and background rules.',
+  },
+  {
+    category: 'Social',
+    identifier: 'Polls',
+    name: 'Polls',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-polls',
+    section: 'quickmythril',
+    service: 'APP',
+    summary: 'Create, browse, and vote on Qortium on-chain polls.',
+  },
+  {
+    category: 'Social',
+    identifier: 'Recipes',
+    name: 'Recipes',
+    publisher: 'Qortium',
+    repo: 'https://github.com/QortiumDev/qortium-recipes',
+    section: 'quickmythril',
+    service: 'APP',
+    summary: 'Publish, browse, and scale community recipes on QDN.',
+  },
+  {
+    category: 'Games',
+    identifier: 'aQuarium',
+    name: 'aQuarium',
+    publisher: '7R15',
+    section: '7r15',
+    service: 'APP',
+    summary: 'Virtual aquarium game on QDN.',
+  },
+  {
+    category: 'Social',
+    identifier: 'Curate',
+    name: 'Curate',
+    publisher: '7R15',
+    repo: 'https://github.com/QortiumDev/qortium-curate',
+    section: '7r15',
+    service: 'APP',
+    summary: 'Curate your follow and block lists.',
+  },
+  {
+    category: 'Games',
+    identifier: 'twenty-qorti-eight',
+    name: 'twenty-qorti-eight',
+    publisher: '7R15',
+    section: '7r15',
+    service: 'APP',
+    summary: '2048-style puzzle game with an on-chain leaderboard.',
   },
   {
     category: 'Tools',
+    featured: true,
     identifier: 'Donation',
     name: '7R15M3G157U5',
     publisher: '7R15',
@@ -237,6 +319,42 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     section: 'iffi',
     service: 'WEBSITE',
     summary: 'iffi vaba mees personal web: an introduction to iffi’s life and work.',
+  },
+  {
+    category: 'Social',
+    identifier: 'Blogs',
+    name: 'blogs',
+    publisher: 'iffi',
+    section: 'iffi',
+    service: 'APP',
+    summary: 'Community blogs on QDN.',
+  },
+  {
+    category: 'Tools',
+    identifier: 'myfileoffice',
+    name: 'My File Office',
+    publisher: 'iffi',
+    section: 'iffi',
+    service: 'APP',
+    summary: 'Publish, browse, preview, and share personal files on QDN.',
+  },
+  {
+    category: 'Social',
+    identifier: 'videos',
+    name: 'Video-Center',
+    publisher: 'iffi',
+    section: 'iffi',
+    service: 'APP',
+    summary: 'Publish, watch, and share community videos.',
+  },
+  {
+    category: 'Social',
+    identifier: 'portal',
+    name: 'Qortium-Unified-Community',
+    publisher: 'iffi',
+    section: 'iffi',
+    service: 'APP',
+    summary: 'Community portal, forum, and wiki for Qortium.',
   },
 ];
 
@@ -365,12 +483,18 @@ export function mergeCatalogResources(resources: QdnResource[]) {
       updated: live?.updated,
     };
   }).sort((a, b) => {
+    if (!!b.featured !== !!a.featured) return a.featured ? -1 : 1;
+
     const aTime = a.updated ?? a.created ?? 0;
     const bTime = b.updated ?? b.created ?? 0;
 
     if (bTime !== aTime) return bTime - aTime;
     return a.title.localeCompare(b.title);
   });
+}
+
+export function getFeaturedCatalogApp(apps: CatalogApp[]) {
+  return apps.find((app) => app.featured);
 }
 
 export function groupCatalogApps(apps: CatalogApp[]): CatalogAppSection[] {
