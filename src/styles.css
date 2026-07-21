@@ -218,7 +218,7 @@ button:hover {
 }
 
 button:disabled {
-  cursor: not-allowed;
+  cursor: pointer;
   opacity: 0.55;
 }
 
@@ -1029,4 +1029,22 @@ p {
   .bgm-label {
     display: none;
   }
+}
+
+.bgm-button.loading {
+  border-color: var(--line-strong);
+  color: var(--muted);
+  cursor: progress;
+}
+
+.bgm-button.unavailable {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.bgm-button.unavailable:hover {
+  border-color: var(--line);
+  background: transparent;
 }

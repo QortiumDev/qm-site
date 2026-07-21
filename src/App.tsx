@@ -12,13 +12,17 @@ import {
   getInitialDisplaySettings,
 } from './displaySettings';
 import {
-  BGM_TRACK_LABEL,
+  fetchBgmObjectUrl,
+  getBgmButtonGlyph,
+  getBgmButtonLabel,
   getBgmSourceUrl,
   getBgmVolume,
+  getSafeStorage,
   readBgmPreference,
   shouldAttemptAutoplay,
   writeBgmPreference,
 } from './backgroundMusic';
+import type { BgmStatus } from './backgroundMusic';
 import { copyTextToClipboard } from './clipboard';
 import {
   SUPPORT_DONATIONS,
@@ -140,8 +144,20 @@ function formatTransactionHash(result: SendCoinResult | string | null | undefine
 
 function BackgroundMusic() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const storage = typeof window === 'undefined' ? null : window.localStorage;
+  const [status, setStatus] = useState<BgmStatus>('paused');
+  // Resolved once, defensively: touching window.localStorage can throw outright in a
+  // WebView with DOM storage disabled, and doing that during render kills the page.
+  const [storage] = useState(getSafeStorage);
+  const blobFallbackRef = useRef<'idle' | 'trying' | 'done'>('idle');
+  const objectUrlRef = useRef<string | null>(null);
+
+  // Release the blob if we ever created one, so the buffered track is not pinned in memory.
+  useEffect(() => () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -156,8 +172,9 @@ function BackgroundMusic() {
 
     let disarm = () => {};
 
-    // Home (Electron) permits autoplay, so this resolves and playback starts on load. A
-    // browser rejects it instead, and we arm the first user gesture rather than retrying.
+    // Home (Electron) permits autoplay, so this resolves and playback starts on load.
+    // Browsers and the Android WebView reject it instead, so we arm the first user
+    // gesture rather than retrying. play() rejects promptly, so the catch always runs.
     audio.play().catch(() => {
       const startOnGesture = () => {
         disarm();
@@ -167,10 +184,13 @@ function BackgroundMusic() {
       disarm = () => {
         window.removeEventListener('pointerdown', startOnGesture);
         window.removeEventListener('keydown', startOnGesture);
+        window.removeEventListener('touchend', startOnGesture);
       };
 
       window.addEventListener('pointerdown', startOnGesture, { once: true });
       window.addEventListener('keydown', startOnGesture, { once: true });
+      // Older Android WebViews do not always emit pointer events for taps.
+      window.addEventListener('touchend', startOnGesture, { once: true });
     });
 
     return () => disarm();
@@ -181,8 +201,30 @@ function BackgroundMusic() {
 
     if (!audio) return;
 
-    if (audio.paused) {
+    // A failed load is often transient (the node may still be fetching chunks), so let a
+    // click start over from the original source rather than stranding the control.
+    if (status === 'unavailable') {
+      blobFallbackRef.current = 'idle';
+
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+
+      setStatus('loading');
+      audio.src = getBgmSourceUrl();
+      audio.load();
       audio.play().catch(() => {});
+      writeBgmPreference(storage, 'on');
+
+      return;
+    }
+
+    if (audio.paused) {
+      // The track is ~3.4 MB fetched from QDN, so show buffering rather than letting the
+      // button read as "playing" while nothing is audible yet.
+      setStatus('loading');
+      audio.play().catch(() => setStatus('paused'));
       writeBgmPreference(storage, 'on');
     } else {
       audio.pause();
@@ -190,25 +232,61 @@ function BackgroundMusic() {
     }
   };
 
+  // Android's WebView can fail on the node URL handed straight to a media element. Rather
+  // than sniff the platform, treat a media error as the signal and retry once from a blob.
+  const handleMediaError = () => {
+    const audio = audioRef.current;
+
+    if (!audio || blobFallbackRef.current !== 'idle') {
+      setStatus('unavailable');
+
+      return;
+    }
+
+    blobFallbackRef.current = 'trying';
+    setStatus('loading');
+
+    fetchBgmObjectUrl()
+      .then((objectUrl) => {
+        blobFallbackRef.current = 'done';
+        objectUrlRef.current = objectUrl;
+        audio.src = objectUrl;
+        audio.load();
+        audio.play().catch(() => setStatus('paused'));
+      })
+      .catch(() => {
+        blobFallbackRef.current = 'done';
+        setStatus('unavailable');
+      });
+  };
+
+  const isBusy = status === 'loading';
+  const isUnavailable = status === 'unavailable';
+
   return (
     <div className="bgm">
       <audio
         loop
-        onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
+        onError={handleMediaError}
+        onPause={() => setStatus((current) => (current === 'unavailable' ? current : 'paused'))}
+        onPlay={() => setStatus((current) => (current === 'playing' ? current : 'loading'))}
+        onPlaying={() => setStatus('playing')}
+        onStalled={() => setStatus((current) => (current === 'playing' ? current : 'loading'))}
+        onWaiting={() => setStatus('loading')}
         preload="none"
         ref={audioRef}
         src={getBgmSourceUrl()}
       />
       <button
-        aria-label={`${isPlaying ? 'Pause' : 'Play'} background music — ${BGM_TRACK_LABEL}`}
-        aria-pressed={isPlaying}
-        className={isPlaying ? 'bgm-button playing' : 'bgm-button'}
+        aria-busy={isBusy}
+        aria-label={getBgmButtonLabel(status)}
+        aria-pressed={status === 'playing'}
+        className={`bgm-button${status === 'playing' ? ' playing' : ''}${isBusy ? ' loading' : ''}${isUnavailable ? ' unavailable' : ''}`}
         onClick={toggle}
-        title={BGM_TRACK_LABEL}
+        title={getBgmButtonLabel(status)}
         type="button"
       >
-        <span aria-hidden="true">{isPlaying ? '❚❚' : '►'}</span>
+        <span aria-hidden="true">{getBgmButtonGlyph(status)}</span>
         <span className="bgm-label">Music</span>
       </button>
     </div>

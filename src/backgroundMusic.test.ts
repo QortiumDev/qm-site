@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   BGM_IDENTIFIER,
+  getBgmButtonGlyph,
+  getBgmButtonLabel,
+  fetchBgmObjectUrl,
+  getSafeStorage,
   BGM_NAME,
   BGM_SERVICE,
   getBgmSourceUrl,
@@ -81,5 +85,96 @@ describe('autoplay decision', () => {
 
   it('respects an explicit opt-out', () => {
     expect(shouldAttemptAutoplay('off')).toBe(false);
+  });
+});
+
+describe('button presentation', () => {
+  it('distinguishes buffering from playing', () => {
+    expect(getBgmButtonGlyph('loading')).toBe('…');
+    expect(getBgmButtonGlyph('playing')).toBe('❚❚');
+    expect(getBgmButtonGlyph('paused')).toBe('►');
+    expect(getBgmButtonGlyph('loading')).not.toBe(getBgmButtonGlyph('playing'));
+  });
+
+  it('announces each state distinctly', () => {
+    const labels = (['paused', 'loading', 'playing', 'unavailable'] as const).map(getBgmButtonLabel);
+
+    expect(new Set(labels).size).toBe(4);
+    expect(getBgmButtonLabel('loading')).toMatch(/loading/i);
+    expect(getBgmButtonLabel('unavailable')).toMatch(/unavailable/i);
+  });
+});
+
+describe('safe storage acquisition', () => {
+  it('returns null instead of throwing when the property access itself throws', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'window');
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      get() {
+        return {
+          get localStorage(): Storage {
+            throw new Error('SecurityError: DOM storage disabled');
+          },
+        };
+      },
+    });
+
+    try {
+      expect(() => getSafeStorage()).not.toThrow();
+      expect(getSafeStorage()).toBeNull();
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'window', original);
+      else delete (globalThis as Record<string, unknown>).window;
+    }
+  });
+});
+
+describe('blob fallback', () => {
+  const originalCreate = URL.createObjectURL;
+
+  function stubObjectUrl() {
+    const seen: Blob[] = [];
+
+    URL.createObjectURL = ((blob: Blob) => {
+      seen.push(blob);
+
+      return `blob:stub/${seen.length}`;
+    }) as typeof URL.createObjectURL;
+
+    return seen;
+  }
+
+  it('rewraps the body with an explicit audio mime type', async () => {
+    const seen = stubObjectUrl();
+
+    try {
+      const fetchImpl = (async () => ({
+        ok: true,
+        status: 200,
+        arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      })) as unknown as typeof fetch;
+
+      const url = await fetchBgmObjectUrl(fetchImpl);
+
+      expect(url).toMatch(/^blob:/);
+      expect(seen).toHaveLength(1);
+      expect(seen[0].type).toBe('audio/mpeg');
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+
+  it('rejects on a non-ok response rather than producing a broken blob', async () => {
+    const seen = stubObjectUrl();
+
+    try {
+      const fetchImpl = (async () => ({ ok: false, status: 404 })) as unknown as typeof fetch;
+
+      await expect(fetchBgmObjectUrl(fetchImpl)).rejects.toThrow(/404/);
+      expect(seen).toHaveLength(0);
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
   });
 });
