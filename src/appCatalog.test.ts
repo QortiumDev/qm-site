@@ -83,7 +83,7 @@ describe('app catalog', () => {
     ]));
 
     expect(sections.map((section) => section.title)).toEqual([
-      'QuickMythril & Qortium Apps',
+      'My Qortium Apps',
       '7R15M3G157U5’s Apps',
       'iffi_vaba_mees’s Apps',
     ]);

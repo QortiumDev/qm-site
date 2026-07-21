@@ -38,7 +38,7 @@ export const CATALOG_SECTION_DEFS: Omit<CatalogAppSection, 'apps'>[] = [
   {
     description: 'Qortium tools maintained, published, or curated through QuickMythril’s workbench.',
     id: 'quickmythril',
-    title: 'QuickMythril & Qortium Apps',
+    title: 'My Qortium Apps',
   },
   {
     description: 'Apps and services published by 7R15M3G157U5, headlined by the verified Donation app.',
