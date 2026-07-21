@@ -516,13 +516,6 @@ p {
   grid-template-rows: auto auto 1fr;
 }
 
-.catalog-headline-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
 .catalog-headline {
   min-height: 0;
   border-color: var(--accent);

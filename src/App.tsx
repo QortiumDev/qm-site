@@ -427,11 +427,7 @@ export function App() {
   const [donationSend, setDonationSend] = useState<DonationSendState | null>(null);
   const [notice, setNotice] = useState('');
 
-  const headlineApps = useMemo(() => getFeaturedCatalogApps(catalogApps), [catalogApps]);
-  const catalogSections = useMemo(
-    () => groupCatalogApps(catalogApps.filter((app) => !app.featured)),
-    [catalogApps],
-  );
+  const catalogSections = useMemo(() => groupCatalogApps(catalogApps), [catalogApps]);
   const canSendCoins = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'SEND_COIN'));
   const canFetchWalletBalance = Boolean(bridgeState?.isHomeBridge && hasAction(bridgeState, 'GET_WALLET_BALANCE'));
 
@@ -768,53 +764,49 @@ export function App() {
             <div className="section-heading">
               <h2>Apps</h2>
             </div>
-            {headlineApps.length ? (
-              <div className="catalog-headline-grid">
-                {headlineApps.map((headlineApp) => (
-                  <article
-                    className="catalog-card catalog-headline"
-                    key={`${headlineApp.name}/${headlineApp.identifier}`}
-                  >
-                    <div className="catalog-card-head">
-                      <AppIcon app={headlineApp} />
-                      <div className="catalog-card-title">
-                        <h3>{headlineApp.title}</h3>
-                        <small>
-                          Featured · by {headlineApp.publisher} ·{' '}
-                          {formatResourceDate(headlineApp.updated ?? headlineApp.created)}
-                        </small>
-                      </div>
-                    </div>
-                    <p>{headlineApp.summary}</p>
-                    <div className="catalog-actions">
-                      <button type="button" onClick={() => openCatalogApp(headlineApp)}>
-                        {headlineApp.service === 'WEBSITE' ? 'Open Site' : 'Open App'}
-                      </button>
-                      {headlineApp.repo ? (
-                        <a
-                          href={headlineApp.repo}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            void copyText(headlineApp.repo ?? '', 'GitHub link');
-                          }}
-                        >
-                          GitHub
-                        </a>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : null}
             <div className="catalog-section-list">
-              {catalogSections.map((section) => (
+              {catalogSections.map((section) => {
+                const headlineApp = getFeaturedCatalogApps(section.apps)[0];
+
+                return (
                 <details className="apps-group" key={section.id} open>
                   <summary>
                     {section.title} <span>({section.apps.length})</span>
                   </summary>
                   <div className="catalog-section">
+                    {headlineApp ? (
+                      <article className="catalog-card catalog-headline">
+                        <div className="catalog-card-head">
+                          <AppIcon app={headlineApp} />
+                          <div className="catalog-card-title">
+                            <h3>{headlineApp.title}</h3>
+                            <small>
+                              Featured · by {headlineApp.publisher} ·{' '}
+                              {formatResourceDate(headlineApp.updated ?? headlineApp.created)}
+                            </small>
+                          </div>
+                        </div>
+                        <p>{headlineApp.summary}</p>
+                        <div className="catalog-actions">
+                          <button type="button" onClick={() => openCatalogApp(headlineApp)}>
+                            {headlineApp.service === 'WEBSITE' ? 'Open Site' : 'Open App'}
+                          </button>
+                          {headlineApp.repo ? (
+                            <a
+                              href={headlineApp.repo}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                void copyText(headlineApp.repo ?? '', 'GitHub link');
+                              }}
+                            >
+                              GitHub
+                            </a>
+                          ) : null}
+                        </div>
+                      </article>
+                    ) : null}
                     <div className="catalog-grid">
-                      {section.apps.map((app) => (
+                      {section.apps.filter((app) => !app.featured).map((app) => (
                         <article className="catalog-card" key={`${app.name}/${app.identifier}`}>
                           <div className="catalog-card-head">
                             <AppIcon app={app} />
@@ -845,7 +837,8 @@ export function App() {
                     </div>
                   </div>
                 </details>
-              ))}
+                );
+              })}
             </div>
           </section>
         ) : null}

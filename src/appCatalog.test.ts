@@ -84,8 +84,8 @@ describe('app catalog', () => {
 
     expect(sections.map((section) => section.title)).toEqual([
       'QuickMythril & Qortium Apps',
-      '7R15 Apps',
-      'iffi Apps & Sites',
+      '7R15M3G157U5’s Apps',
+      'iffi_vaba_mees’s Apps',
     ]);
     const quickmythrilApps = sections.find((section) => section.id === 'quickmythril')?.apps.map((app) => app.name);
 
@@ -106,15 +106,14 @@ describe('app catalog', () => {
     ]));
   });
 
-  it('features 7R15’s Donation app and iffi’s website as catalog headliners', () => {
-    const apps = mergeCatalogResources([]);
-    const featured = getFeaturedCatalogApps(apps);
+  it('features Donation and iffi’s website as their sections’ headliners', () => {
+    const sections = groupCatalogApps(mergeCatalogResources([]));
+    const headliner = (id: string) =>
+      getFeaturedCatalogApps(sections.find((section) => section.id === id)?.apps ?? [])[0];
 
-    expect(featured.map((app) => app.resource)).toEqual([
-      'qdn://APP/7R15M3G157U5/Donation',
-      'qdn://WEBSITE/iffi_vaba_mees/iffivabameeswebsite',
-    ]);
-    expect(apps.slice(0, 2).every((app) => app.featured)).toBe(true);
+    expect(headliner('quickmythril')).toBeUndefined();
+    expect(headliner('7r15')?.resource).toBe('qdn://APP/7R15M3G157U5/Donation');
+    expect(headliner('iffi')?.resource).toBe('qdn://WEBSITE/iffi_vaba_mees/iffivabameeswebsite');
   });
 
   it('builds thumbnail avatar URLs from the same node base as render URLs', () => {

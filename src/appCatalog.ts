@@ -41,14 +41,14 @@ export const CATALOG_SECTION_DEFS: Omit<CatalogAppSection, 'apps'>[] = [
     title: 'QuickMythril & Qortium Apps',
   },
   {
-    description: 'Apps and services published by 7R15M3G157U5, including the verified Donation app.',
+    description: 'Apps and services published by 7R15M3G157U5, headlined by the verified Donation app.',
     id: '7r15',
-    title: '7R15 Apps',
+    title: '7R15M3G157U5’s Apps',
   },
   {
-    description: 'Apps and sites published by iffi, including the personal QDN website under the verified sibling name.',
+    description: 'Apps and sites published by iffi, headlined by the personal QDN website under the verified sibling name.',
     id: 'iffi',
-    title: 'iffi Apps & Sites',
+    title: 'iffi_vaba_mees’s Apps',
   },
 ];
 
