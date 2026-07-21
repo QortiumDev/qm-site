@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { TABS, formatNodeStatus, getTabFromHash } from './App';
+import { TABS, formatNodeStatus, getTabFromHash, getTabFromLocation } from './App';
 
 describe('tabs', () => {
   it('exports the personal site tabs', () => {
     expect(TABS).toEqual([
       { id: 'about', label: 'About' },
       { id: 'apps', label: 'Apps' },
+      { id: 'developers', label: 'Developers' },
       { hidden: true, id: 'todo', label: 'To-Do' },
       { hidden: true, id: 'worklog', label: 'Work Log' },
       { id: 'support', label: 'Support' },
@@ -13,7 +14,7 @@ describe('tabs', () => {
   });
 
   it('shows only the public navigation tabs in the menu', () => {
-    expect(TABS.filter((tab) => !tab.hidden).map((tab) => tab.id)).toEqual(['about', 'apps', 'support']);
+    expect(TABS.filter((tab) => !tab.hidden).map((tab) => tab.id)).toEqual(['about', 'apps', 'developers', 'support']);
   });
 
   it('defaults empty and unknown hashes to apps', () => {
@@ -28,6 +29,13 @@ describe('tabs', () => {
     expect(getTabFromHash('#donate')).toBe('support');
     expect(getTabFromHash('#todo')).toBe('todo');
     expect(getTabFromHash('#worklog')).toBe('worklog');
+  });
+
+  it('recognizes developer query routes without consuming Home display settings', () => {
+    expect(getTabFromLocation('?view=developers&uiStyle=fun&accent=purple', '#apps')).toBe('developers');
+    expect(getTabFromLocation('?view=developer', '#apps')).toBe('developers');
+    expect(getTabFromLocation('?view=reference', '#apps')).toBe('developers');
+    expect(getTabFromLocation('?view=unknown&uiStyle=fun', '#support')).toBe('support');
   });
 });
 

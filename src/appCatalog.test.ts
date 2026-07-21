@@ -38,7 +38,7 @@ describe('app catalog', () => {
     });
   });
 
-  it('groups owned and recommended apps with Quest and Discussion Boards in recommended', () => {
+  it('groups QuickMythril, 7R15, and iffi resources with their verified identities', () => {
     const sections = groupCatalogApps(mergeCatalogResources([
       {
         created: 1000,
@@ -73,29 +73,42 @@ describe('app catalog', () => {
         service: 'APP',
         status: { status: 'BUILDING' },
       },
+      {
+        created: 1000,
+        identifier: 'Donation',
+        name: '7R15M3G157U5',
+        service: 'APP',
+        status: { status: 'READY' },
+      },
+      {
+        created: 1000,
+        identifier: 'iffivabameeswebsite',
+        metadata: {
+          title: 'iffi vaba mees personal web',
+        },
+        name: 'iffi_vaba_mees',
+        service: 'WEBSITE',
+        status: { status: 'READY' },
+      },
     ]));
 
     expect(sections.map((section) => section.title)).toEqual([
-      'My Qortium Apps',
-      'Recommended Apps',
+      'QuickMythril & Qortium Apps',
+      '7R15 Apps',
+      'iffi Apps & Sites',
     ]);
-    expect(sections.find((section) => section.id === 'my')?.apps.map((app) => app.name)).toContain('Chat');
-    expect(sections.find((section) => section.id === 'recommended')?.apps.map((app) => app.name)).toContain('Apps');
-    expect(sections.find((section) => section.id === 'recommended')?.description).toBe(
-      'Apps from 7R15 and the wider community that pair well with the Qortium tools.',
+    expect(sections.find((section) => section.id === 'quickmythril')?.apps.map((app) => app.name)).toContain('Chat');
+    expect(sections.find((section) => section.id === '7r15')?.apps.map((app) => app.resource)).toContain(
+      'qdn://APP/7R15M3G157U5/Donation',
     );
-    expect(sections.find((section) => section.id === 'recommended')?.apps.map((app) => app.resource).sort()).toEqual([
-      'qdn://APP/Apps/Apps',
-      'qdn://APP/Chain/Chain',
-      'qdn://APP/Discussion_Boards/discussion-boards',
-      'qdn://APP/Groups/Groups',
-      'qdn://APP/Library/Library',
-      'qdn://APP/Names/Names',
-      'qdn://APP/Profile/Profile',
-      'qdn://APP/Publish/Publish',
-      'qdn://APP/Quest/Quest',
-      'qdn://APP/Wallet/Wallet',
-    ]);
+    expect(sections.find((section) => section.id === 'iffi')?.apps).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        resource: 'qdn://WEBSITE/iffi_vaba_mees/iffivabameeswebsite',
+        service: 'WEBSITE',
+        source: 'live',
+        title: 'iffi vaba mees personal web',
+      }),
+    ]));
   });
 
   it('builds thumbnail avatar URLs from the same node base as render URLs', () => {

@@ -1,7 +1,8 @@
 import { getNodeApiUrl } from './qdnRequest';
 import type { QdnResource } from './types';
 
-export type CatalogSectionId = 'my' | 'recommended';
+export type CatalogSectionId = 'quickmythril' | '7r15' | 'iffi';
+export type CatalogService = 'APP' | 'WEBSITE';
 
 export type CatalogAppSeed = {
   category: 'Core' | 'Home' | 'Explorer' | 'Social' | 'Operations' | 'Tools' | 'Games';
@@ -10,6 +11,7 @@ export type CatalogAppSeed = {
   publisher: string;
   repo?: string;
   section: CatalogSectionId;
+  service: CatalogService;
   summary: string;
 };
 
@@ -33,14 +35,19 @@ export type CatalogAppSection = {
 
 export const CATALOG_SECTION_DEFS: Omit<CatalogAppSection, 'apps'>[] = [
   {
-    description: 'Apps published for the Qortium workspace and maintained as part of this Qortium app set.',
-    id: 'my',
-    title: 'My Qortium Apps',
+    description: 'Qortium tools maintained, published, or curated through QuickMythril’s workbench.',
+    id: 'quickmythril',
+    title: 'QuickMythril & Qortium Apps',
   },
   {
-    description: 'Apps from 7R15 and the wider community that pair well with the Qortium tools.',
-    id: 'recommended',
-    title: 'Recommended Apps',
+    description: 'Apps and services published by 7R15M3G157U5, including the verified Donation app.',
+    id: '7r15',
+    title: '7R15 Apps',
+  },
+  {
+    description: 'Apps and sites published by iffi, including the personal QDN website under the verified sibling name.',
+    id: 'iffi',
+    title: 'iffi Apps & Sites',
   },
 ];
 
@@ -51,7 +58,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Apps',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-apps',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'App explorer, favorites, and app-discovery dashboard.',
   },
   {
@@ -60,7 +68,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Chain',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-chain-explorer',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'Block, transaction, and payment explorer.',
   },
   {
@@ -69,7 +78,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Chat',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-chat',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Public and private group messaging inside Qortium Home.',
   },
   {
@@ -78,7 +88,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Groups',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-group-manager',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'Group discovery, membership, and management.',
   },
   {
@@ -87,7 +98,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Help',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-help',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Help, feedback, and support routing for Qortium apps.',
   },
   {
@@ -96,7 +108,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Library',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-library',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'QDN document reader and library.',
   },
   {
@@ -105,7 +118,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Minting',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-minting',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Minting status and account minting diagnostics.',
   },
   {
@@ -114,7 +128,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Names',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-name-manager',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'Name registration and marketplace.',
   },
   {
@@ -123,7 +138,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Network',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-network',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Previewnet topology and peer-status viewer.',
   },
   {
@@ -132,7 +148,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Node',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-node',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Node operator diagnostics and settings surface.',
   },
   {
@@ -141,7 +158,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Profile',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-profile-manager',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'Account profile and social identity management.',
   },
   {
@@ -150,7 +168,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Publish',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-publish-manager',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'QDN resource publishing, following, and blocking.',
   },
   {
@@ -159,7 +178,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Trust',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-trust',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Trust-network browser and account rating explorer.',
   },
   {
@@ -168,7 +188,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Wallet',
     publisher: '7R15',
     repo: 'https://github.com/QortiumDev/qortium-wallet',
-    section: 'recommended',
+    section: '7r15',
+    service: 'APP',
     summary: 'Multi-coin crypto wallet.',
   },
   {
@@ -177,7 +198,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     name: 'Emulator',
     publisher: 'Qortium',
     repo: 'https://github.com/QortiumDev/qortium-emulator',
-    section: 'my',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Game metadata browser and emulator launcher.',
   },
   {
@@ -185,7 +207,8 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     identifier: 'Quest',
     name: 'Quest',
     publisher: 'Quest',
-    section: 'recommended',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Quest social app on QDN.',
   },
   {
@@ -193,8 +216,27 @@ export const QORTIUM_APP_SEEDS: CatalogAppSeed[] = [
     identifier: 'discussion-boards',
     name: 'Discussion_Boards',
     publisher: 'Discussion Boards',
-    section: 'recommended',
+    section: 'quickmythril',
+    service: 'APP',
     summary: 'Discussion boards, votes, polls, surveys, and messaging.',
+  },
+  {
+    category: 'Tools',
+    identifier: 'Donation',
+    name: '7R15M3G157U5',
+    publisher: '7R15',
+    section: '7r15',
+    service: 'APP',
+    summary: '7R15’s published Donation app on Qortium Previewnet.',
+  },
+  {
+    category: 'Home',
+    identifier: 'iffivabameeswebsite',
+    name: 'iffi_vaba_mees',
+    publisher: 'iffi',
+    section: 'iffi',
+    service: 'WEBSITE',
+    summary: 'iffi vaba mees personal web: an introduction to iffi’s life and work.',
   },
 ];
 
@@ -206,8 +248,8 @@ function getString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
-function resourceKey(name: string | undefined, identifier: string | undefined) {
-  return `${name ?? ''}/${identifier ?? ''}`.toLowerCase();
+function resourceKey(service: string | undefined, name: string | undefined, identifier: string | undefined) {
+  return `${service ?? ''}/${name ?? ''}/${identifier ?? ''}`.toLowerCase();
 }
 
 function getMetadata(resource: QdnResource) {
@@ -297,12 +339,12 @@ export function getQdnAddress(service: string, name: string, identifier: string 
 export function mergeCatalogResources(resources: QdnResource[]) {
   const resourcesByKey = new Map(
     resources
-      .filter((resource) => resource.service === 'APP' && resource.name && resource.identifier)
-      .map((resource) => [resourceKey(resource.name, resource.identifier), resource]),
+      .filter((resource) => (resource.service === 'APP' || resource.service === 'WEBSITE') && resource.name && resource.identifier)
+      .map((resource) => [resourceKey(resource.service, resource.name, resource.identifier), resource]),
   );
 
   return QORTIUM_APP_SEEDS.map((seed): CatalogApp => {
-    const live = resourcesByKey.get(resourceKey(seed.name, seed.identifier));
+    const live = resourcesByKey.get(resourceKey(seed.service, seed.name, seed.identifier));
     const title = live ? getTitle(live, seed) : seed.identifier;
     const description = live ? getDescription(live, seed) : seed.summary;
     const status = live ? getString((live.status as Record<string, unknown> | undefined)?.status) || getString(live.status) || 'listed' : 'seed';
@@ -311,10 +353,10 @@ export function mergeCatalogResources(resources: QdnResource[]) {
       ...seed,
       created: live?.created,
       iconUrls: [
-        getQdnRenderUrl('APP', seed.name, seed.identifier, 'favicon.ico'),
+        getQdnRenderUrl(seed.service, seed.name, seed.identifier, 'favicon.ico'),
         getThumbnailAvatarUrl(seed.name),
       ],
-      resource: getQdnAddress('APP', seed.name, seed.identifier),
+      resource: getQdnAddress(seed.service, seed.name, seed.identifier),
       size: live?.size,
       source: live ? 'live' : 'seed',
       status,

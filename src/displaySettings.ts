@@ -1,10 +1,11 @@
 export const ACCENT_OPTIONS = ['green', 'blue', 'orange', 'purple', 'red', 'teal', 'cyan', 'pink', 'yellow'] as const;
 export const TEXT_SIZE_OPTIONS = ['extra-small', 'small', 'medium', 'large', 'extra-large', 'huge'] as const;
+export const UI_STYLE_OPTIONS = ['classic', 'modern', 'fun'] as const;
 
 export type QdnTheme = 'dark' | 'light';
 export type QdnAccent = (typeof ACCENT_OPTIONS)[number];
 export type QdnTextSize = (typeof TEXT_SIZE_OPTIONS)[number];
-export type QdnUiStyle = 'classic' | 'modern';
+export type QdnUiStyle = (typeof UI_STYLE_OPTIONS)[number];
 
 export type QdnDisplaySettings = {
   accent: QdnAccent;
@@ -54,8 +55,9 @@ export function normalizeTextSize(value: unknown): QdnTextSize | null {
 
 export function normalizeUiStyle(value: unknown): QdnUiStyle {
   if (typeof value !== 'string') return 'classic';
+  const normalized = value.trim().toLowerCase();
 
-  return value.trim().toLowerCase() === 'modern' ? 'modern' : 'classic';
+  return UI_STYLE_OPTIONS.includes(normalized as QdnUiStyle) ? (normalized as QdnUiStyle) : 'classic';
 }
 
 export function getInitialDisplaySettings(): QdnDisplaySettings {

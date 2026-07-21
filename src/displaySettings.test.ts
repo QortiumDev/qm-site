@@ -31,6 +31,8 @@ describe('display settings', () => {
     expect(normalizeUiStyle('modern')).toBe('modern');
     expect(normalizeUiStyle(' modern ')).toBe('modern');
     expect(normalizeUiStyle('Modern')).toBe('modern');
+    expect(normalizeUiStyle('fun')).toBe('fun');
+    expect(normalizeUiStyle(' fun ')).toBe('fun');
     expect(normalizeUiStyle('future')).toBe('classic');
     expect(normalizeUiStyle(undefined)).toBe('classic');
   });
@@ -52,6 +54,14 @@ describe('display settings', () => {
     });
 
     expect(getInitialDisplaySettings().ui).toBe('modern');
+
+    vi.stubGlobal('window', {
+      location: {
+        search: '?uiStyle=fun',
+      },
+    });
+
+    expect(getInitialDisplaySettings().ui).toBe('fun');
 
     vi.stubGlobal('window', {
       location: {
@@ -89,6 +99,13 @@ describe('display settings', () => {
         { accent: 'green', textSize: 'medium', theme: 'light', ui: 'classic' },
       ),
     ).toEqual({ accent: 'green', textSize: 'medium', theme: 'light', ui: 'modern' });
+
+    expect(
+      getDisplaySettingsUpdateFromMessage(
+        { action: 'UI_STYLE_CHANGED', requestedHandler: 'UI', uiStyle: 'fun' },
+        { accent: 'green', textSize: 'medium', theme: 'light', ui: 'modern' },
+      ),
+    ).toEqual({ accent: 'green', textSize: 'medium', theme: 'light', ui: 'fun' });
 
     expect(
       getDisplaySettingsUpdateFromMessage(

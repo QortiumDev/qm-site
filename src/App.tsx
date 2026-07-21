@@ -49,7 +49,7 @@ import {
 
 const APP_TITLE = 'Qortium Workbench';
 
-type TabId = 'about' | 'apps' | 'todo' | 'worklog' | 'support';
+type TabId = 'about' | 'apps' | 'developers' | 'todo' | 'worklog' | 'support';
 type TabDefinition = {
   hidden?: boolean;
   id: TabId;
@@ -73,6 +73,7 @@ type SendCoinResult = {
 export const TABS: TabDefinition[] = [
   { id: 'about', label: 'About' },
   { id: 'apps', label: 'Apps' },
+  { id: 'developers', label: 'Developers' },
   { hidden: true, id: 'todo', label: 'To-Do' },
   { hidden: true, id: 'worklog', label: 'Work Log' },
   { id: 'support', label: 'Support' },
@@ -359,31 +360,63 @@ export function getTabFromHash(hash: string): TabId {
   return TABS.some((item) => item.id === raw) ? (raw as TabId) : 'apps';
 }
 
-function useHashTab() {
+export function getTabFromLocation(search: string, hash: string): TabId {
+  const view = new URLSearchParams(search).get('view')?.trim().toLowerCase();
+
+  if (view === 'developers' || view === 'developer' || view === 'reference') return 'developers';
+
+  return getTabFromHash(hash);
+}
+
+function useWorkbenchTab() {
   const [tab, setTab] = useState<TabId>(() => {
-    return typeof window === 'undefined' ? 'apps' : getTabFromHash(window.location.hash);
+    return typeof window === 'undefined' ? 'apps' : getTabFromLocation(window.location.search, window.location.hash);
   });
 
   useEffect(() => {
-    const onHashChange = () => {
-      setTab(getTabFromHash(window.location.hash));
+    const syncTab = () => {
+      setTab(getTabFromLocation(window.location.search, window.location.hash));
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener('hashchange', syncTab);
+    window.addEventListener('popstate', syncTab);
+    return () => {
+      window.removeEventListener('hashchange', syncTab);
+      window.removeEventListener('popstate', syncTab);
+    };
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const view = url.searchParams.get('view')?.trim().toLowerCase();
+
+    if (view === 'developer' || view === 'reference') {
+      url.searchParams.set('view', 'developers');
+      window.history.replaceState(null, '', url);
+    }
   }, []);
 
   const activate = (next: TabId) => {
     setTab(next);
-    if (typeof window !== 'undefined' && window.location.hash !== `#${next}`) {
-      window.location.hash = next;
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+
+    if (next === 'developers') {
+      url.searchParams.set('view', 'developers');
+      url.hash = '';
+    } else {
+      url.searchParams.delete('view');
+      url.hash = next;
     }
+
+    window.history.pushState(null, '', url);
   };
 
   return [tab, activate] as const;
 }
 
 export function App() {
-  const [activeTab, setActiveTab] = useHashTab();
+  const [activeTab, setActiveTab] = useWorkbenchTab();
   const [displaySettings, setDisplaySettings] = useState(getInitialDisplaySettings);
   const [bridgeState, setBridgeState] = useState<BridgeState | null>(null);
   const [, setNodeStatus] = useState<NodeStatus | null>(null);
@@ -417,16 +450,17 @@ export function App() {
     }
 
     try {
-      const result = await qdnRequest<unknown>({
+      const results = await Promise.all(['APP', 'WEBSITE'].map((service) => qdnRequest<unknown>({
         action: 'LIST_QDN_RESOURCES',
         includeMetadata: true,
         includeStatus: true,
         limit: 200,
         mode: 'ALL',
-        service: 'APP',
-      });
+        service,
+      })));
+      const resources = results.flatMap((result) => (Array.isArray(result) ? (result as QdnResource[]) : []));
 
-      setCatalogApps(mergeCatalogResources(Array.isArray(result) ? (result as QdnResource[]) : []));
+      setCatalogApps(mergeCatalogResources(resources));
     } catch {
       setCatalogApps(mergeCatalogResources([]));
     }
@@ -497,7 +531,7 @@ export function App() {
       return;
     }
 
-    window.open(getQdnRenderUrl('APP', app.name, app.identifier), '_blank', 'noopener,noreferrer');
+    window.open(getQdnRenderUrl(app.service, app.name, app.identifier), '_blank', 'noopener,noreferrer');
   }
 
   async function copyText(value: string, copiedLabel: string) {
@@ -749,7 +783,7 @@ export function App() {
                           <p>{app.summary}</p>
                           <div className="catalog-actions">
                             <button type="button" onClick={() => openCatalogApp(app)}>
-                              Open App
+                              {app.service === 'WEBSITE' ? 'Open Site' : 'Open App'}
                             </button>
                             {app.repo ? (
                               <a
@@ -770,6 +804,65 @@ export function App() {
                 </details>
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'developers' ? (
+          <section className="stack developer-reference" aria-labelledby="developer-reference-title">
+            <section className="panel">
+              <p className="eyebrow">Reference v1 · QAVS 1.4.0</p>
+              <h2 id="developer-reference-title">Qortium Workbench developer reference</h2>
+              <p>
+                This is the public contract for the Workbench website. It is a read-focused QDN website with optional
+                Qortium Home bridge features; it does not expose an unauthenticated publishing or wallet-write API.
+              </p>
+            </section>
+
+            <section className="panel developer-grid">
+              <div>
+                <h3>QDN identity & lifecycle</h3>
+                <ul>
+                  <li><code>qdn://WEBSITE/QuickMythril/qm-site</code> — published Workbench website.</li>
+                  <li><code>qdn://AUDIO/QuickMythril/qm-site-bgm</code> — optional background-music resource.</li>
+                  <li>Catalog entries are seeded identities enriched with live <code>APP</code> and <code>WEBSITE</code> metadata when Home permits resource listing.</li>
+                  <li>Resource reads are safe in a local browser fallback; publishing remains outside this website’s public surface.</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Display settings</h3>
+                <ul>
+                  <li>Supported UI families: <code>classic</code>, <code>modern</code>, and <code>fun</code>.</li>
+                  <li>Render query: <code>?uiStyle=fun</code>; invalid or absent UI style resolves to <code>classic</code>.</li>
+                  <li>Live Home event: <code>{'{ requestedHandler: \'UI\', action: \'UI_STYLE_CHANGED\', uiStyle }'}</code>.</li>
+                  <li>Theme, accent, text size, and UI family are independent settings applied on the document root.</li>
+                </ul>
+              </div>
+            </section>
+
+            <section className="panel developer-grid">
+              <div>
+                <h3>Home bridge capabilities</h3>
+                <p>When granted by Qortium Home, the site uses these actions:</p>
+                <code>GET_NODE_STATUS · LIST_QDN_RESOURCES · FETCH_QDN_RESOURCE · OPEN_NEW_TAB · GET_WALLET_BALANCE · SEND_COIN</code>
+              </div>
+              <div>
+                <h3>Authority boundary</h3>
+                <p>
+                  Catalog browsing and the work-log data are read flows. Opening an entry delegates to Home. Wallet balance
+                  and sending a donation are available only through a trusted Home bridge that exposes the matching actions;
+                  the user confirms the transaction in the site flow.
+                </p>
+              </div>
+            </section>
+
+            <section className="panel">
+              <h3>Catalog resource shape</h3>
+              <code>{`{ service: 'APP' | 'WEBSITE', name, identifier, title, summary, resource: 'qdn://…', source: 'live' | 'seed' }`}</code>
+              <p className="muted-note">
+                The canonical developer route is <code>?view=developers</code>. Read-only aliases <code>?view=developer</code>
+                and <code>?view=reference</code> resolve here; navigation writes only the canonical form and preserves Home display parameters.
+              </p>
+            </section>
           </section>
         ) : null}
 

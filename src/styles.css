@@ -12,6 +12,34 @@
   font-weight: 100 900;
 }
 
+@font-face {
+  font-family: "Comic Neue";
+  src: url("./assets/fonts/comic-neue/ComicNeue-400.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Comic Neue";
+  src: url("./assets/fonts/comic-neue/ComicNeue-700.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("./assets/fonts/fredoka/Fredoka-600.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("./assets/fonts/fredoka/Fredoka-700.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 700;
+}
+
 :root {
   color: #dfe7f1;
   background: #0b0e12;
@@ -807,6 +835,36 @@ p {
   font-size: 0.8125rem;
 }
 
+.developer-reference .panel > h2,
+.developer-reference .panel > h3 {
+  margin-top: 0;
+}
+
+.developer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.developer-grid h3 {
+  margin-bottom: 8px;
+}
+
+.developer-grid ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+  line-height: 1.55;
+}
+
+.developer-reference li code,
+.developer-reference .muted-note code {
+  display: inline;
+  padding: 2px 5px;
+}
+
 .advanced-toggle summary {
   cursor: pointer;
   color: var(--muted);
@@ -869,6 +927,21 @@ p {
 @media (max-width: 760px) {
   .donation-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .developer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-ui="fun"] .panel,
+  :root[data-ui="fun"] .apps-group,
+  :root[data-ui="fun"] .catalog-card,
+  :root[data-ui="fun"] .donation-card,
+  :root[data-ui="fun"] .priority-item,
+  :root[data-ui="fun"] .timeline-item,
+  :root[data-ui="fun"] .notice,
+  :root[data-ui="fun"] .send-modal {
+    box-shadow: 0 4px 0 rgb(114 78 42 / 0.1);
   }
 }
 
@@ -982,6 +1055,109 @@ p {
 
 :root[data-ui="modern"] button:not(.secondary):not(.tab-button):not(.icon-button) {
   border-radius: 50px;
+}
+
+:root[data-ui="fun"] {
+  font-family: "Comic Neue", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --bg: #f8f1df;
+  --sidebar: #fff9ec;
+  --panel: #fffdf7;
+  --card: #fff7e6;
+  --panel-soft: #f9efd7;
+  --ink: #342b2a;
+  --muted: #6e625d;
+  --line: #e8cfa9;
+  --line-strong: #d7ae74;
+  --shadow: 0 8px 0 rgb(114 78 42 / 0.1), 0 15px 24px rgb(114 78 42 / 0.12);
+}
+
+:root[data-ui="fun"] body {
+  min-width: 0;
+}
+
+:root[data-theme="dark"][data-ui="fun"] {
+  color: #f7efe1;
+  background: #1c2228;
+  --bg: #1c2228;
+  --sidebar: #252e35;
+  --panel: #29343d;
+  --card: #34424d;
+  --panel-soft: #202a31;
+  --ink: #f7efe1;
+  --muted: #c7bcb0;
+  --line: #536371;
+  --line-strong: #7990a3;
+  --shadow: 0 8px 0 rgb(0 0 0 / 0.18), 0 15px 24px rgb(0 0 0 / 0.22);
+}
+
+:root[data-ui="fun"] h1,
+:root[data-ui="fun"] h2,
+:root[data-ui="fun"] h3,
+:root[data-ui="fun"] button,
+:root[data-ui="fun"] .tab-button,
+:root[data-ui="fun"] .chip,
+:root[data-ui="fun"] .eyebrow {
+  font-family: "Fredoka", "Comic Neue", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-ui="fun"] .brand-mark,
+:root[data-ui="fun"] .panel,
+:root[data-ui="fun"] .apps-group,
+:root[data-ui="fun"] .catalog-card,
+:root[data-ui="fun"] .donation-card,
+:root[data-ui="fun"] .priority-item,
+:root[data-ui="fun"] .timeline-item,
+:root[data-ui="fun"] .notice,
+:root[data-ui="fun"] .send-modal {
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+:root[data-ui="fun"] .brand-mark,
+:root[data-ui="fun"] .app-icon,
+:root[data-ui="fun"] .coin-badge {
+  border-width: 2px;
+}
+
+:root[data-ui="fun"] .tab-button,
+:root[data-ui="fun"] .chip,
+:root[data-ui="fun"] .balance-pill {
+  border-radius: 999px;
+}
+
+:root[data-ui="fun"] button:not(.tab-button):not(.icon-button) {
+  border-width: 2px;
+  border-radius: 999px;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--button-bg) 45%, var(--line-strong));
+}
+
+:root[data-ui="fun"] button:not(.tab-button):not(.icon-button):active {
+  box-shadow: none;
+  transform: translateY(2px);
+}
+
+:root[data-ui="fun"] button:focus-visible,
+:root[data-ui="fun"] a:focus-visible,
+:root[data-ui="fun"] summary:focus-visible,
+:root[data-ui="fun"] input:focus-visible {
+  outline: 3px solid #5637ce;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="fun"] *,
+  :root[data-ui="fun"] *::before,
+  :root[data-ui="fun"] *::after {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}
+
+:root[data-text-size="extra-large"][data-ui="fun"] button:not(.tab-button):not(.icon-button),
+:root[data-text-size="huge"][data-ui="fun"] button:not(.tab-button):not(.icon-button) {
+  box-shadow: none;
 }
 
 .notice-toast {
