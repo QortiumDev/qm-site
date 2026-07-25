@@ -94,6 +94,7 @@ export const TABS: TabDefinition[] = [
   { id: 'support', label: 'Support' },
 ];
 
+// Interim URLs — swap in dashboard-generated PayPal share links (launch plan Day 0) before publishing.
 const FUNDING_TIERS: FundingTier[] = [
   {
     cta: 'Support for $3/mo',
@@ -145,7 +146,7 @@ const FUNDING_CHANNELS: FundingChannel[] = [
   },
   {
     cta: 'Open Patreon',
-    description: 'Profile prepared but not yet published; payouts wait on Stripe recovery.',
+    description: 'Profile prepared but not yet published; payout method and fee plan still being confirmed.',
     name: 'Patreon',
     status: 'coming-soon',
   },
@@ -1084,7 +1085,7 @@ export function App() {
                       className="secondary"
                       type="button"
                       onClick={() =>
-                        setNotice('One-time card/PayPal payments arrive after Stripe recovery — the crypto addresses below work today.')
+                        setNotice('The one-time PayPal link is being set up — the crypto addresses below work today.')
                       }
                     >
                       Send $25 once
@@ -1142,12 +1143,13 @@ export function App() {
             <section className="panel">
               <div className="section-heading">
                 <div>
-                  <h2>Crypto / QORT / QDN fallback</h2>
+                  <h2>Crypto donations</h2>
                   <p>Copy any on-chain address if you want to support through crypto.</p>
                 </div>
               </div>
               <p className="muted-note">
-                No platform middleman or processing fees. Use the addresses below at your discretion.
+                Direct on-chain support: no processor fees, but payments are irreversible and value may fluctuate.
+                Use the addresses below at your discretion.
               </p>
             </section>
 
