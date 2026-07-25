@@ -32,6 +32,19 @@ that app's `favicon.ico` when available.
 
 ## Support Donations
 
+### Community funding
+
+This site includes a transparency-first support section that aims to cover documented recurring
+operating costs before adding any paid service offers.
+
+- Primary target: **$300 / month**
+- Soft target: **$325 / month**
+- Primary channel: **GitHub Sponsors** (`github.com/sponsors/QuickMythril`)
+- Planned secondary channels: **Stripe+PayPal**, **Liberapay**, then **Patreon**
+- Crypto/QORT/QDN donation addresses remain optional fallback rails
+
+Use the support tab for a full breakdown and the actual links/CTAs.
+
 The Support page shows donation addresses and Home-mediated send buttons for:
 
 - BTC: `1NxmYAMYbXUmZixWLnFg2Pq4k2hoKkPg5V`

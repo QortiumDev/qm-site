@@ -50,6 +50,20 @@ import {
 
 const APP_TITLE = 'Qortium Workbench';
 
+type FundingChannel = {
+  cta: string;
+  description: string;
+  href?: string;
+  name: string;
+  status: 'coming-soon' | 'ready';
+};
+type FundingTier = {
+  cta: string;
+  description: string;
+  href: string;
+  id: string;
+  title: string;
+};
 type TabId = 'about' | 'apps' | 'developers' | 'todo' | 'worklog' | 'support';
 type TabDefinition = {
   hidden?: boolean;
@@ -78,6 +92,63 @@ export const TABS: TabDefinition[] = [
   { hidden: true, id: 'todo', label: 'To-Do' },
   { hidden: true, id: 'worklog', label: 'Work Log' },
   { id: 'support', label: 'Support' },
+];
+
+const FUNDING_TIERS: FundingTier[] = [
+  {
+    cta: 'Support for $3/mo',
+    description:
+      'Supports the recurring cost of keeping the work active and gives me flexibility to continue shipping bug fixes and testing.',
+    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-4LH24594NT9323341NJSTOHI',
+    id: 'tier-3',
+    title: '$3/mo — Keep It Running',
+  },
+  {
+    cta: 'Share $8/mo',
+    description:
+      'Covers a meaningful share of tools, infrastructure, and maintenance so I can keep the heavier release work going.',
+    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5JJ811920L138222DNJSTO5I',
+    id: 'tier-8',
+    title: '$8/mo — Share the Monthly Burn',
+  },
+  {
+    cta: 'Back It for $20/mo',
+    description: 'Helps materially reduce monthly maintenance risk from infrastructure and dev/tool costs.',
+    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5DS99301KT145512GNJSTPHQ',
+    id: 'tier-20',
+    title: '$20/mo — Back the Infrastructure',
+  },
+];
+
+const FUNDING_CHANNELS: FundingChannel[] = [
+  {
+    cta: 'Sponsor on GitHub',
+    description: 'Planned primary trust path — pending account recovery before it can accept sponsors.',
+    href: 'https://github.com/sponsors/QuickMythril',
+    name: 'GitHub Sponsors',
+    status: 'coming-soon',
+  },
+  {
+    cta: 'Use card/PayPal page',
+    description:
+      'Recurring PayPal plans are already live in the tiers above; the Stripe card page arrives after account recovery.',
+    name: 'Stripe + PayPal',
+    status: 'coming-soon',
+  },
+  {
+    cta: 'Open Liberapay',
+    description:
+      'Live today via PayPal (each renewal needs a manual confirmation); lower-friction card autopay arrives with Stripe.',
+    href: 'https://liberapay.com/QuickMythril',
+    name: 'Liberapay',
+    status: 'ready',
+  },
+  {
+    cta: 'Open Patreon',
+    description: 'Profile prepared but not yet published; payouts wait on Stripe recovery.',
+    name: 'Patreon',
+    status: 'coming-soon',
+  },
 ];
 
 export function formatNodeStatus(status: NodeStatus | null) {
@@ -957,8 +1028,126 @@ export function App() {
                 <h2>Support</h2>
               </div>
               <p>
-                The best ways to support this work: run Qortium Home, try the apps, and report what breaks. If you
-                want to help fund development, any of the addresses below is appreciated.
+                I build and maintain open-source tools on Qortium and QDN. To keep this work running, I am making
+                support transparent and simple: recover real recurring costs so maintenance can stay sustainable.
+              </p>
+              <p>
+                <strong>Primary monthly target:</strong> $300/mo
+                <br />
+                <strong>Soft target (with buffer):</strong> $325/mo
+              </p>
+              <h3>Transparency</h3>
+              <ul>
+                <li>Phone service: $45/mo</li>
+                <li>ChatGPT Pro (includes Codex): $106/mo</li>
+                <li>Claude Max: $106/mo</li>
+                <li>VPS + cloud infrastructure: about $21/mo</li>
+                <li>Plus the qortium.app domain (about €32/yr)</li>
+              </ul>
+              <p className="muted-note">
+                Support does not create a paywall or private SLA. It helps fund the boring maintenance work: testing,
+                documentation, release reliability, and infra reliability.
+              </p>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Funding options</h2>
+                  <p>
+                    Choose a channel that fits your setup. The monthly tiers below use PayPal today; GitHub Sponsors
+                    joins once account recovery completes.
+                  </p>
+                </div>
+              </div>
+              <div className="catalog-grid">
+                {FUNDING_TIERS.map((tier) => (
+                  <article className="catalog-card" key={tier.id}>
+                    <div className="catalog-card-title">
+                      <h3>{tier.title}</h3>
+                    </div>
+                    <p>{tier.description}</p>
+                    <div className="catalog-actions">
+                      <a href={tier.href} rel="noopener noreferrer" target="_blank">
+                        {tier.cta}
+                      </a>
+                    </div>
+                  </article>
+                ))}
+                <article className="catalog-card">
+                  <div className="catalog-card-title">
+                    <h3>$25 once — Cover a chunk of monthly costs</h3>
+                  </div>
+                  <p>Optional one-time fallback if you prefer a single support payment.</p>
+                  <div className="catalog-actions">
+                    <button
+                      className="secondary"
+                      type="button"
+                      onClick={() =>
+                        setNotice('One-time card/PayPal payments arrive after Stripe recovery — the crypto addresses below work today.')
+                      }
+                    >
+                      Send $25 once
+                    </button>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Funding channels</h2>
+                  <p>
+                    Live today: PayPal tiers, Liberapay, and crypto. Coming after account recovery: GitHub Sponsors,
+                    the Stripe card page, and Patreon.
+                  </p>
+                </div>
+              </div>
+              <div className="donation-grid">
+                {FUNDING_CHANNELS.map((channel) => (
+                  <article className="donation-card" key={channel.name}>
+                    <div className="donation-card-head">
+                      <div>
+                        <h3>{channel.name}</h3>
+                        <p>{channel.description}</p>
+                      </div>
+                    </div>
+                    <div className="donation-actions">
+                      {channel.status === 'ready' && channel.href ? (
+                        <a
+                          className="secondary"
+                          href={channel.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setNotice(`${channel.name} opened`)}
+                        >
+                          {channel.cta}
+                        </a>
+                      ) : (
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => setNotice(`${channel.name} setup is coming soon.`)}
+                        >
+                          {channel.cta}
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Crypto / QORT / QDN fallback</h2>
+                  <p>Copy any on-chain address if you want to support through crypto.</p>
+                </div>
+              </div>
+              <p className="muted-note">
+                No platform middleman or processing fees. Use the addresses below at your discretion.
               </p>
             </section>
 
