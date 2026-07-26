@@ -80,6 +80,15 @@ export const SUPPORT_DONATIONS: DonationAddress[] = [
   },
 ];
 
+// Display/copy-only: a Qortal-mainnet address. It must stay out of
+// SUPPORT_DONATIONS so the Home SEND_COIN flow (Qortium bridge, fee-per-byte
+// UTXO coins) can never target it.
+export const QORT_DONATION = {
+  address: 'QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko',
+  coin: 'QORT',
+  label: 'Qortal mainnet',
+} as const;
+
 export function truncateDonationAddress(address: string, edge = 6) {
   const safeEdge = Math.max(2, Math.floor(edge));
 

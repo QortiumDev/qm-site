@@ -701,6 +701,11 @@ p {
   font-weight: 950;
 }
 
+.coin-qort {
+  background: color-mix(in srgb, #1a9fe8 24%, var(--panel-soft));
+  color: #7fd0ff;
+}
+
 .coin-btc {
   background: color-mix(in srgb, #f7931a 22%, var(--panel-soft));
   color: #f7b65c;

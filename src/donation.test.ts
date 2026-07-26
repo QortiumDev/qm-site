@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  QORT_DONATION,
   SUPPORT_DONATIONS,
   atomicFeePerByteToCoinString,
   atomicToCoinString,
@@ -37,9 +38,15 @@ describe('support donation configuration', () => {
     ]);
   });
 
-  it('does not include the old QORT donation address', () => {
-    expect(JSON.stringify(SUPPORT_DONATIONS)).not.toContain('QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko');
+  it('keeps QORT out of the sendable donation list', () => {
+    expect(JSON.stringify(SUPPORT_DONATIONS)).not.toContain(QORT_DONATION.address);
     expect(SUPPORT_DONATIONS.some((donation) => String(donation.coin) === 'QORT')).toBe(false);
+  });
+
+  it('exposes the QORT address as display-only (reintroduced 2026-07-25 by owner request)', () => {
+    expect(QORT_DONATION.address).toBe('QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko');
+    expect(QORT_DONATION.coin).toBe('QORT');
+    expect(QORT_DONATION.label).toBe('Qortal mainnet');
   });
 
   it('truncates long addresses for compact cards', () => {

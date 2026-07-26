@@ -26,6 +26,7 @@ import {
 import type { BgmStatus } from './backgroundMusic';
 import { copyTextToClipboard } from './clipboard';
 import {
+  QORT_DONATION,
   SUPPORT_DONATIONS,
   atomicToCoinString,
   getDefaultFeeAtomsPerByte,
@@ -1143,7 +1144,7 @@ export function App() {
             <section className="panel">
               <div className="section-heading">
                 <div>
-                  <h2>Crypto donations</h2>
+                  <h2>Crypto / QORT donations</h2>
                   <p>Copy any on-chain address if you want to support through crypto.</p>
                 </div>
               </div>
@@ -1161,6 +1162,29 @@ export function App() {
                 </div>
               </div>
               <div className="donation-grid">
+                <article className="donation-card" key={QORT_DONATION.coin}>
+                  <div className="donation-card-head">
+                    <div className="coin-heading">
+                      <span className="coin-badge coin-qort" aria-hidden="true">
+                        Q
+                      </span>
+                      <div>
+                        <h3>{QORT_DONATION.coin}</h3>
+                        <p>{QORT_DONATION.label}</p>
+                      </div>
+                    </div>
+                    <code title={QORT_DONATION.address}>{truncateDonationAddress(QORT_DONATION.address)}</code>
+                  </div>
+                  <div className="donation-actions">
+                    <button
+                      className="secondary"
+                      type="button"
+                      onClick={() => copyDonationAddress(QORT_DONATION.coin, QORT_DONATION.address)}
+                    >
+                      Copy address
+                    </button>
+                  </div>
+                </article>
                 {SUPPORT_DONATIONS.map((donation) => (
                   <article className="donation-card" key={donation.coin}>
                     <div className="donation-card-head">
