@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  QORT_DONATION,
+  QORT_DONATION_7R15,
   SUPPORT_DONATIONS,
   atomicFeePerByteToCoinString,
   atomicToCoinString,
@@ -37,9 +39,23 @@ describe('support donation configuration', () => {
     ]);
   });
 
-  it('does not include the old QORT donation address', () => {
-    expect(JSON.stringify(SUPPORT_DONATIONS)).not.toContain('QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko');
+  it('keeps QORT out of the sendable donation list', () => {
+    expect(JSON.stringify(SUPPORT_DONATIONS)).not.toContain(QORT_DONATION.address);
+    expect(JSON.stringify(SUPPORT_DONATIONS)).not.toContain(QORT_DONATION_7R15.address);
     expect(SUPPORT_DONATIONS.some((donation) => String(donation.coin) === 'QORT')).toBe(false);
+  });
+
+  it('exposes the QORT address as display-only (reintroduced 2026-07-25 by owner request)', () => {
+    expect(QORT_DONATION.address).toBe('QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko');
+    expect(QORT_DONATION.coin).toBe('QORT');
+    expect(QORT_DONATION.label).toBe('Qortal mainnet');
+  });
+
+  it('exposes 7R15\'s QORT address as display-only (verified 2026-07-29 via the mainnet name registry)', () => {
+    expect(QORT_DONATION_7R15.address).toBe('QTqnNyDrUSdeH8QhwXqB6bxoGtLUjCvd4R');
+    expect(QORT_DONATION_7R15.coin).toBe('QORT');
+    expect(QORT_DONATION_7R15.label).toBe('Qortal mainnet');
+    expect(QORT_DONATION_7R15.address).not.toBe(QORT_DONATION.address);
   });
 
   it('truncates long addresses for compact cards', () => {

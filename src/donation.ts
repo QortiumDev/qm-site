@@ -80,6 +80,26 @@ export const SUPPORT_DONATIONS: DonationAddress[] = [
   },
 ];
 
+// Display/copy-only: Qortal-mainnet addresses. They must stay out of
+// SUPPORT_DONATIONS so the Home SEND_COIN flow (Qortium bridge, fee-per-byte
+// UTXO coins) can never target them. Qortium Previewnet has no native coin.
+export const QORT_DONATION = {
+  address: 'QT4zHex8JEULmBhYmKd5UhpiNA46T5wUko',
+  coin: 'QORT',
+  label: 'Qortal mainnet',
+} as const;
+
+// Co-maintainer 7R15's QORT address, verified 2026-07-29 against the Qortal
+// mainnet name registry (name 7R15M3G157U5 owns it). Same display/copy-only
+// rule as QORT_DONATION: never add it to SUPPORT_DONATIONS or SEND_COIN.
+export const QORT_DONATION_7R15 = {
+  address: 'QTqnNyDrUSdeH8QhwXqB6bxoGtLUjCvd4R',
+  coin: 'QORT',
+  label: 'Qortal mainnet',
+} as const;
+
+export type QortDonation = typeof QORT_DONATION | typeof QORT_DONATION_7R15;
+
 export function truncateDonationAddress(address: string, edge = 6) {
   const safeEdge = Math.max(2, Math.floor(edge));
 

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatResourceDate,
   getFeaturedCatalogApps,
+  getQdnAddress,
   getQdnRenderUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -26,6 +27,8 @@ import {
 import type { BgmStatus } from './backgroundMusic';
 import { copyTextToClipboard } from './clipboard';
 import {
+  QORT_DONATION,
+  QORT_DONATION_7R15,
   SUPPORT_DONATIONS,
   atomicToCoinString,
   getDefaultFeeAtomsPerByte,
@@ -33,7 +36,7 @@ import {
   validateDonationAmount,
   validateDonationFeeAtomsPerByte,
 } from './donation';
-import type { DonationAddress } from './donation';
+import type { DonationAddress, QortDonation } from './donation';
 import { getBridgeState, qdnRequest } from './qdnRequest';
 import type { BridgeState, NodeStatus, QdnResource } from './types';
 import {
@@ -79,6 +82,13 @@ export const TABS: TabDefinition[] = [
   { hidden: true, id: 'worklog', label: 'Work Log' },
   { id: 'support', label: 'Support' },
 ];
+
+// 7R15's Donation app, published on QDN under his registered name.
+const DONATION_APP_7R15 = {
+  identifier: 'Donation',
+  name: '7R15M3G157U5',
+  service: 'APP',
+} as const;
 
 export function formatNodeStatus(status: NodeStatus | null) {
   if (!status) return 'No node context';
@@ -330,6 +340,38 @@ function AppIcon({ app }: { app: CatalogApp }) {
   );
 }
 
+// Display/copy-only card shared by both QORT addresses: no send button on
+// purpose — the Home SEND_COIN flow must never target a Qortal-mainnet address.
+function QortDonationCard({
+  donation,
+  onCopy,
+}: {
+  donation: QortDonation;
+  onCopy: (coin: string, address: string) => void;
+}) {
+  return (
+    <article className="donation-card">
+      <div className="donation-card-head">
+        <div className="coin-heading">
+          <span className="coin-badge coin-qort" aria-hidden="true">
+            Q
+          </span>
+          <div>
+            <h3>{donation.coin}</h3>
+            <p>{donation.label}</p>
+          </div>
+        </div>
+        <code title={donation.address}>{truncateDonationAddress(donation.address)}</code>
+      </div>
+      <div className="donation-actions">
+        <button className="secondary" type="button" onClick={() => onCopy(donation.coin, donation.address)}>
+          Copy address
+        </button>
+      </div>
+    </article>
+  );
+}
+
 async function fetchWorkbenchCollection<T>(
   contract: QdnContract,
   normalize: (payload: unknown) => T[],
@@ -523,16 +565,29 @@ export function App() {
     }
   }
 
-  async function openCatalogApp(app: CatalogApp) {
+  async function openQdnApp(service: string, name: string, identifier: string | undefined, address: string) {
     if (hasAction(bridgeState, 'OPEN_NEW_TAB')) {
       await qdnRequest({
         action: 'OPEN_NEW_TAB',
-        address: app.resource,
+        address,
       });
       return;
     }
 
-    window.open(getQdnRenderUrl(app.service, app.name, app.identifier), '_blank', 'noopener,noreferrer');
+    window.open(getQdnRenderUrl(service, name, identifier), '_blank', 'noopener,noreferrer');
+  }
+
+  async function openCatalogApp(app: CatalogApp) {
+    await openQdnApp(app.service, app.name, app.identifier, app.resource);
+  }
+
+  async function openDonationApp7r15() {
+    await openQdnApp(
+      DONATION_APP_7R15.service,
+      DONATION_APP_7R15.name,
+      DONATION_APP_7R15.identifier,
+      getQdnAddress(DONATION_APP_7R15.service, DONATION_APP_7R15.name, DONATION_APP_7R15.identifier),
+    );
   }
 
   async function copyText(value: string, copiedLabel: string) {
@@ -954,22 +1009,16 @@ export function App() {
           <section className="stack">
             <section className="panel">
               <div className="section-heading">
-                <h2>Support</h2>
-              </div>
-              <p>
-                The best ways to support this work: run Qortium Home, try the apps, and report what breaks. If you
-                want to help fund development, any of the addresses below is appreciated.
-              </p>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
                 <div>
-                  <h2>Donation Addresses</h2>
-                  <p>Copy one of these addresses to support QuickMythril's Qortium app and Previewnet work.</p>
+                  <h2>Support QuickMythril</h2>
+                  <p>
+                    Direct on-chain support for my Qortium apps and Previewnet work. Copy the QORT address, or copy
+                    an address for any of the other coins — in Qortium Home you can also send them from your wallet.
+                  </p>
                 </div>
               </div>
               <div className="donation-grid">
+                <QortDonationCard donation={QORT_DONATION} onCopy={copyDonationAddress} />
                 {SUPPORT_DONATIONS.map((donation) => (
                   <article className="donation-card" key={donation.coin}>
                     <div className="donation-card-head">
@@ -999,6 +1048,54 @@ export function App() {
                   </article>
                 ))}
               </div>
+              <p className="muted-note">
+                On-chain payments are irreversible and value may fluctuate — use these addresses at your discretion.
+                Both QORT addresses on this page are Qortal-mainnet addresses; Qortium Previewnet has no native coin.
+              </p>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Support 7R15</h2>
+                  <p>7R15 also helps maintain Qortium — support sent here goes directly to him.</p>
+                </div>
+              </div>
+              <div className="donation-grid">
+                <QortDonationCard donation={QORT_DONATION_7R15} onCopy={copyDonationAddress} />
+                <article className="donation-card">
+                  <div className="donation-card-head">
+                    <div>
+                      <h3>Donation app</h3>
+                      <p>7R15's own Donation app, published on QDN.</p>
+                    </div>
+                  </div>
+                  <div className="donation-actions">
+                    <button type="button" onClick={() => openDonationApp7r15()}>
+                      Open App
+                    </button>
+                  </div>
+                </article>
+              </div>
+              <p className="muted-note">
+                The QORT address is a Qortal-mainnet address; Qortium Previewnet has no native coin.
+              </p>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>More ways to support</h2>
+                </div>
+              </div>
+              <p>
+                More ways to support — including card and bank options, plus the full cost-transparency breakdown —
+                are listed at{' '}
+                <a href="https://qortium.app/support" rel="noopener noreferrer" target="_blank">
+                  qortium.app/support
+                </a>
+                .
+              </p>
             </section>
           </section>
         ) : null}
