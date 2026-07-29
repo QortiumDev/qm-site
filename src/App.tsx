@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatResourceDate,
   getFeaturedCatalogApps,
+  getQdnAddress,
   getQdnRenderUrl,
   groupCatalogApps,
   mergeCatalogResources,
@@ -27,6 +28,7 @@ import type { BgmStatus } from './backgroundMusic';
 import { copyTextToClipboard } from './clipboard';
 import {
   QORT_DONATION,
+  QORT_DONATION_7R15,
   SUPPORT_DONATIONS,
   atomicToCoinString,
   getDefaultFeeAtomsPerByte,
@@ -34,7 +36,7 @@ import {
   validateDonationAmount,
   validateDonationFeeAtomsPerByte,
 } from './donation';
-import type { DonationAddress } from './donation';
+import type { DonationAddress, QortDonation } from './donation';
 import { getBridgeState, qdnRequest } from './qdnRequest';
 import type { BridgeState, NodeStatus, QdnResource } from './types';
 import {
@@ -51,20 +53,6 @@ import {
 
 const APP_TITLE = 'Qortium Workbench';
 
-type FundingChannel = {
-  cta: string;
-  description: string;
-  href?: string;
-  name: string;
-  status: 'coming-soon' | 'ready';
-};
-type FundingTier = {
-  cta: string;
-  description: string;
-  href: string;
-  id: string;
-  title: string;
-};
 type TabId = 'about' | 'apps' | 'developers' | 'todo' | 'worklog' | 'support';
 type TabDefinition = {
   hidden?: boolean;
@@ -95,63 +83,12 @@ export const TABS: TabDefinition[] = [
   { id: 'support', label: 'Support' },
 ];
 
-// Interim URLs — swap in dashboard-generated PayPal share links (launch plan Day 0) before publishing.
-const FUNDING_TIERS: FundingTier[] = [
-  {
-    cta: 'Support for $3/mo',
-    description:
-      'Supports the recurring cost of keeping the work active and gives me flexibility to continue shipping bug fixes and testing.',
-    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-4LH24594NT9323341NJSTOHI',
-    id: 'tier-3',
-    title: '$3/mo — Keep It Running',
-  },
-  {
-    cta: 'Share $8/mo',
-    description:
-      'Covers a meaningful share of tools, infrastructure, and maintenance so I can keep the heavier release work going.',
-    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5JJ811920L138222DNJSTO5I',
-    id: 'tier-8',
-    title: '$8/mo — Share the Monthly Burn',
-  },
-  {
-    cta: 'Back It for $20/mo',
-    description: 'Helps materially reduce monthly maintenance risk from infrastructure and dev/tool costs.',
-    href: 'https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5DS99301KT145512GNJSTPHQ',
-    id: 'tier-20',
-    title: '$20/mo — Back the Infrastructure',
-  },
-];
-
-const FUNDING_CHANNELS: FundingChannel[] = [
-  {
-    cta: 'Sponsor on GitHub',
-    description: 'Planned primary trust path — pending account recovery before it can accept sponsors.',
-    href: 'https://github.com/sponsors/QuickMythril',
-    name: 'GitHub Sponsors',
-    status: 'coming-soon',
-  },
-  {
-    cta: 'Use card/PayPal page',
-    description:
-      'Recurring PayPal plans are already live in the tiers above; the Stripe card page arrives after account recovery.',
-    name: 'Stripe + PayPal',
-    status: 'coming-soon',
-  },
-  {
-    cta: 'Open Liberapay',
-    description:
-      'Live today via PayPal (each renewal needs a manual confirmation); lower-friction card autopay arrives with Stripe.',
-    href: 'https://liberapay.com/QuickMythril',
-    name: 'Liberapay',
-    status: 'ready',
-  },
-  {
-    cta: 'Open Patreon',
-    description: 'Profile prepared but not yet published; payout method and fee plan still being confirmed.',
-    name: 'Patreon',
-    status: 'coming-soon',
-  },
-];
+// 7R15's Donation app, published on QDN under his registered name.
+const DONATION_APP_7R15 = {
+  identifier: 'Donation',
+  name: '7R15M3G157U5',
+  service: 'APP',
+} as const;
 
 export function formatNodeStatus(status: NodeStatus | null) {
   if (!status) return 'No node context';
@@ -403,6 +340,38 @@ function AppIcon({ app }: { app: CatalogApp }) {
   );
 }
 
+// Display/copy-only card shared by both QORT addresses: no send button on
+// purpose — the Home SEND_COIN flow must never target a Qortal-mainnet address.
+function QortDonationCard({
+  donation,
+  onCopy,
+}: {
+  donation: QortDonation;
+  onCopy: (coin: string, address: string) => void;
+}) {
+  return (
+    <article className="donation-card">
+      <div className="donation-card-head">
+        <div className="coin-heading">
+          <span className="coin-badge coin-qort" aria-hidden="true">
+            Q
+          </span>
+          <div>
+            <h3>{donation.coin}</h3>
+            <p>{donation.label}</p>
+          </div>
+        </div>
+        <code title={donation.address}>{truncateDonationAddress(donation.address)}</code>
+      </div>
+      <div className="donation-actions">
+        <button className="secondary" type="button" onClick={() => onCopy(donation.coin, donation.address)}>
+          Copy address
+        </button>
+      </div>
+    </article>
+  );
+}
+
 async function fetchWorkbenchCollection<T>(
   contract: QdnContract,
   normalize: (payload: unknown) => T[],
@@ -596,16 +565,29 @@ export function App() {
     }
   }
 
-  async function openCatalogApp(app: CatalogApp) {
+  async function openQdnApp(service: string, name: string, identifier: string | undefined, address: string) {
     if (hasAction(bridgeState, 'OPEN_NEW_TAB')) {
       await qdnRequest({
         action: 'OPEN_NEW_TAB',
-        address: app.resource,
+        address,
       });
       return;
     }
 
-    window.open(getQdnRenderUrl(app.service, app.name, app.identifier), '_blank', 'noopener,noreferrer');
+    window.open(getQdnRenderUrl(service, name, identifier), '_blank', 'noopener,noreferrer');
+  }
+
+  async function openCatalogApp(app: CatalogApp) {
+    await openQdnApp(app.service, app.name, app.identifier, app.resource);
+  }
+
+  async function openDonationApp7r15() {
+    await openQdnApp(
+      DONATION_APP_7R15.service,
+      DONATION_APP_7R15.name,
+      DONATION_APP_7R15.identifier,
+      getQdnAddress(DONATION_APP_7R15.service, DONATION_APP_7R15.name, DONATION_APP_7R15.identifier),
+    );
   }
 
   async function copyText(value: string, copiedLabel: string) {
@@ -1027,164 +1009,16 @@ export function App() {
           <section className="stack">
             <section className="panel">
               <div className="section-heading">
-                <h2>Support</h2>
-              </div>
-              <p>
-                I build and maintain open-source tools on Qortium and QDN. To keep this work running, I am making
-                support transparent and simple: recover real recurring costs so maintenance can stay sustainable.
-              </p>
-              <p>
-                <strong>Primary monthly target:</strong> $300/mo
-                <br />
-                <strong>Soft target (with buffer):</strong> $325/mo
-              </p>
-              <h3>Transparency</h3>
-              <ul>
-                <li>Phone service: $45/mo</li>
-                <li>ChatGPT Pro (includes Codex): $106/mo</li>
-                <li>Claude Max: $106/mo</li>
-                <li>VPS + cloud infrastructure: about $21/mo</li>
-                <li>Plus the qortium.app domain (about €32/yr)</li>
-              </ul>
-              <p className="muted-note">
-                Support does not create a paywall or private SLA. It helps fund the boring maintenance work: testing,
-                documentation, release reliability, and infra reliability.
-              </p>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
                 <div>
-                  <h2>Funding options</h2>
+                  <h2>Support QuickMythril</h2>
                   <p>
-                    Choose a channel that fits your setup. The monthly tiers below use PayPal today; GitHub Sponsors
-                    joins once account recovery completes.
-                  </p>
-                </div>
-              </div>
-              <div className="catalog-grid">
-                {FUNDING_TIERS.map((tier) => (
-                  <article className="catalog-card" key={tier.id}>
-                    <div className="catalog-card-title">
-                      <h3>{tier.title}</h3>
-                    </div>
-                    <p>{tier.description}</p>
-                    <div className="catalog-actions">
-                      <a href={tier.href} rel="noopener noreferrer" target="_blank">
-                        {tier.cta}
-                      </a>
-                    </div>
-                  </article>
-                ))}
-                <article className="catalog-card">
-                  <div className="catalog-card-title">
-                    <h3>$25 once — Cover a chunk of monthly costs</h3>
-                  </div>
-                  <p>Optional one-time fallback if you prefer a single support payment.</p>
-                  <div className="catalog-actions">
-                    <button
-                      className="secondary"
-                      type="button"
-                      onClick={() =>
-                        setNotice('The one-time PayPal link is being set up — the crypto addresses below work today.')
-                      }
-                    >
-                      Send $25 once
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Funding channels</h2>
-                  <p>
-                    Live today: PayPal tiers, Liberapay, and crypto. Coming after account recovery: GitHub Sponsors,
-                    the Stripe card page, and Patreon.
+                    Direct on-chain support for my Qortium apps and Previewnet work. Copy the QORT address, or copy
+                    an address for any of the other coins — in Qortium Home you can also send them from your wallet.
                   </p>
                 </div>
               </div>
               <div className="donation-grid">
-                {FUNDING_CHANNELS.map((channel) => (
-                  <article className="donation-card" key={channel.name}>
-                    <div className="donation-card-head">
-                      <div>
-                        <h3>{channel.name}</h3>
-                        <p>{channel.description}</p>
-                      </div>
-                    </div>
-                    <div className="donation-actions">
-                      {channel.status === 'ready' && channel.href ? (
-                        <a
-                          className="secondary"
-                          href={channel.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => setNotice(`${channel.name} opened`)}
-                        >
-                          {channel.cta}
-                        </a>
-                      ) : (
-                        <button
-                          className="secondary"
-                          type="button"
-                          onClick={() => setNotice(`${channel.name} setup is coming soon.`)}
-                        >
-                          {channel.cta}
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Crypto / QORT donations</h2>
-                  <p>Copy any on-chain address if you want to support through crypto.</p>
-                </div>
-              </div>
-              <p className="muted-note">
-                Direct on-chain support: no processor fees, but payments are irreversible and value may fluctuate.
-                Use the addresses below at your discretion.
-              </p>
-            </section>
-
-            <section className="panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Donation Addresses</h2>
-                  <p>Copy one of these addresses to support QuickMythril's Qortium app and Previewnet work.</p>
-                </div>
-              </div>
-              <div className="donation-grid">
-                <article className="donation-card" key={QORT_DONATION.coin}>
-                  <div className="donation-card-head">
-                    <div className="coin-heading">
-                      <span className="coin-badge coin-qort" aria-hidden="true">
-                        Q
-                      </span>
-                      <div>
-                        <h3>{QORT_DONATION.coin}</h3>
-                        <p>{QORT_DONATION.label}</p>
-                      </div>
-                    </div>
-                    <code title={QORT_DONATION.address}>{truncateDonationAddress(QORT_DONATION.address)}</code>
-                  </div>
-                  <div className="donation-actions">
-                    <button
-                      className="secondary"
-                      type="button"
-                      onClick={() => copyDonationAddress(QORT_DONATION.coin, QORT_DONATION.address)}
-                    >
-                      Copy address
-                    </button>
-                  </div>
-                </article>
+                <QortDonationCard donation={QORT_DONATION} onCopy={copyDonationAddress} />
                 {SUPPORT_DONATIONS.map((donation) => (
                   <article className="donation-card" key={donation.coin}>
                     <div className="donation-card-head">
@@ -1214,6 +1048,54 @@ export function App() {
                   </article>
                 ))}
               </div>
+              <p className="muted-note">
+                On-chain payments are irreversible and value may fluctuate — use these addresses at your discretion.
+                Both QORT addresses on this page are Qortal-mainnet addresses; Qortium Previewnet has no native coin.
+              </p>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Support 7R15</h2>
+                  <p>7R15 also helps maintain Qortium — support sent here goes directly to him.</p>
+                </div>
+              </div>
+              <div className="donation-grid">
+                <QortDonationCard donation={QORT_DONATION_7R15} onCopy={copyDonationAddress} />
+                <article className="donation-card">
+                  <div className="donation-card-head">
+                    <div>
+                      <h3>Donation app</h3>
+                      <p>7R15's own Donation app, published on QDN.</p>
+                    </div>
+                  </div>
+                  <div className="donation-actions">
+                    <button type="button" onClick={() => openDonationApp7r15()}>
+                      Open App
+                    </button>
+                  </div>
+                </article>
+              </div>
+              <p className="muted-note">
+                The QORT address is a Qortal-mainnet address; Qortium Previewnet has no native coin.
+              </p>
+            </section>
+
+            <section className="panel">
+              <div className="section-heading">
+                <div>
+                  <h2>More ways to support</h2>
+                </div>
+              </div>
+              <p>
+                More ways to support — including card and bank options, plus the full cost-transparency breakdown —
+                are listed at{' '}
+                <a href="https://qortium.app/support" rel="noopener noreferrer" target="_blank">
+                  qortium.app/support
+                </a>
+                .
+              </p>
             </section>
           </section>
         ) : null}
