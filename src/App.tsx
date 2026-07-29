@@ -1091,8 +1091,8 @@ export function App() {
               <p>
                 More ways to support — including card and bank options, plus the full cost-transparency breakdown —
                 are listed at{' '}
-                <a href="https://qortium.app/support" rel="noopener noreferrer" target="_blank">
-                  qortium.app/support
+                <a href="https://qortium.app/support.html" rel="noopener noreferrer" target="_blank">
+                  qortium.app/support.html
                 </a>
                 .
               </p>
