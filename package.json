@@ -1,6 +1,6 @@
 {
   "name": "qm-site",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "private": true,
   "license": "0BSD",
   "description": "QuickMythril Qortium workbench website for app status, priorities, and work log.",
