@@ -1,1 +1,7 @@
-github: QuickMythril
+# GitHub Sponsors is deliberately absent: individual Sponsors payouts run on
+# Stripe Connect Express, and that identity carries a 2026-07-30 Stripe risk
+# termination, so the Sponsor button would lead somewhere that cannot take
+# money. Point at the support page instead, which lists only live rails.
+custom: ['https://qortium.app/support.html']
+ko_fi: quickmythril
+liberapay: QuickMythril
